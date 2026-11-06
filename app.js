@@ -124,7 +124,7 @@
   function fitDevice() {
     var w = device.offsetWidth;
     var h = device.offsetHeight;
-    var margin = 32;
+    var margin = 24;
     var s = Math.min((window.innerHeight - margin * 2) / h, (window.innerWidth - margin * 2) / w, 1);
     device.style.setProperty("--scale", s.toFixed(4));
     fit.style.width = w * s + "px";

@@ -4,7 +4,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
-  background: #1c1c1e;
+  background: #e6e6e8;
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
@@ -28,26 +28,53 @@ img { display: block; }
   /* sized by app.js to the scaled device so it centres correctly */
   position: relative;
 }
+/* Sunmi P3 body image: 796 × 2000 px. Its display measures 701 × 1553 px at
+   (47, 362) with ~62 px corners; the 720 × 1600 screen is scaled into it. */
 .device {
-  --bezel: 22px;
   position: absolute; top: 0; left: 0;
-  width: calc(var(--screen-w) + var(--bezel) * 2);
-  height: calc(var(--screen-h) + var(--bezel) * 2);
-  padding: var(--bezel);
-  border-radius: 64px;
-  background: #0b0b0c;
-  box-shadow: 0 0 0 2px #2c2c2e, 0 40px 80px rgba(0, 0, 0, 0.45);
+  width: 796px; height: 2000px;
   transform-origin: 0 0;
-  transform: scale(var(--scale, 0.5));
+  transform: scale(var(--scale, 0.3));
+}
+.device__body {
+  position: absolute; inset: 0;
+  width: 796px; height: 2000px;
+  filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.28));
+  user-select: none; -webkit-user-drag: none;
 }
 .screen {
-  position: relative;
+  position: absolute; left: 47px; top: 362px;
   width: var(--screen-w);
   height: var(--screen-h);
-  border-radius: var(--screen-radius);
+  transform-origin: 0 0;
+  transform: scale(calc(701 / 720), calc(1553 / 1600));
+  /* The device's display corners (62 px) in screen units. clip-path cuts the whole screen
+     as one layer; border-radius + overflow clips each layer separately, and the lighter
+     layers' anti-aliased edges then show as a hairline under dark content. */
+  clip-path: inset(0 round 64px);
   overflow: hidden;
-  background: var(--c-gray-50);
+  /* No fill: the views paint their own backgrounds. A light fill here leaks out as a
+     hairline along the rounded corners, under the anti-aliased edge of darker content. */
+  background: transparent;
   isolation: isolate;
+}
+/* Paints the photo's grey display area in the bezel's black (#010101), a few px
+   larger all round, so the screen's anti-aliased edges blend into black, not a grey hairline. */
+.device__display {
+  position: absolute; left: 43px; top: 358px;
+  width: 709px; height: 1561px;
+  border-radius: 66px;
+  background: #010101;
+}
+/* Camera notch, cut from the same image and laid over the screen, as on the device. */
+/* Starts 6 px up inside the black bezel so the notch joins the bezel with no gap;
+   otherwise the screen's anti-aliased top row shows as a grey line above the notch. */
+.device__notch {
+  position: absolute; left: 355px; top: 356px;
+  width: 84px; height: 50px;
+  background: url("assets/terminal-device.webp") -355px -356px / 796px 2000px no-repeat;
+  clip-path: path("M0 0 H84 V7 C72 7 70 11 70 21 A28 28 0 0 1 14 21 C14 11 12 7 0 7 Z");
+  pointer-events: none;
 }
 
 /* ---------- Views ---------- */
@@ -65,12 +92,15 @@ img { display: block; }
   width: 100%; height: 39px;
   background: var(--c-gray-200);
 }
+/* Figma: time at x9, icons flush right, drawn for 20px screen corners. The P3's display
+   corners are ~64px, so both move 28px inward to clear them, as Android does on rounded
+   displays (deviation from Figma, agreed 2026-11-06). */
 .statusbar__time {
-  position: absolute; left: 9px; top: 6px;
+  position: absolute; left: 37px; top: 6px;
   font: 400 var(--fs-status) / 28px var(--font-status);
   color: var(--c-black);
 }
-.statusbar__icons { position: absolute; right: 0; top: 0; width: 91px; height: 39px; }
+.statusbar__icons { position: absolute; right: 28px; top: 0; width: 91px; height: 39px; }
 .statusbar--muted .statusbar__time { color: var(--c-status-muted); opacity: 0.6; }
 
 /* =====================================================================

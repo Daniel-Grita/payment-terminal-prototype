@@ -5,7 +5,8 @@ Unlike the Figma prototype, the keypad is real: type any amount, confirm, and th
 payment runs through to **Approved** with that amount, using the original Figma
 timings, transitions and loader animation.
 
-Built for usability testing in a desktop browser, with the terminal shown in a phone frame.
+Built for usability testing in a desktop browser, with the screen shown inside a
+Sunmi P3 terminal (`assets/terminal-device.webp`), camera notch included.
 
 ## Run it
 

@@ -17,6 +17,7 @@ Cancel Transaction, Approved → new sale, loader motion, fonts, console.
 **Back of the fence:**
 - The coloured keys (✕ ← ✓) and CANCEL TRANSACTION have no pressed state in Figma; the build darkens them slightly on press (deviation, your call).
 - On Amount Entry the Figma amount sits 5.5 px right of centre (frame at x92 in a 710 px sheet). Built as designed; it looks like an accident in the file.
+- Inside the Sunmi P3 mockup (display corners ~64px vs Figma's 20px), the status-bar time and icons are inset 28px so the corners don't clip them (deviation, agreed).
 - No declined path exists, so the prototype can't show what happens when payment fails. Out of scope for v1, but it's the first thing a real test will ask.
 
 ## Diagnostic
