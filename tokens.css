@@ -1,0 +1,72 @@
+/*
+ * Design tokens — Payment Terminal, Flow 2
+ * Every value is read from the Figma file "Calculator" (QECglsPSBmsCk9OykstnEc).
+ * Units are Figma units: the terminal screen is built at its native 720 × 1600
+ * and scaled as a whole to fit the window, so 1 token px = 1 Figma px.
+ * The file binds no variables, so names here are ours; the values are Figma's.
+ */
+
+/* Lato 2.0 (the design uses Regular 400, SemiBold 600 and ExtraBold 800;
+   Google Fonts only serves 400/700/900, so this loads the full family). */
+@font-face { font-family: "Lato"; font-weight: 400; font-style: normal; font-display: block;
+  src: url("https://cdn.jsdelivr.net/npm/lato-font@3.0.0/fonts/lato-normal/lato-normal.woff2") format("woff2"); }
+@font-face { font-family: "Lato"; font-weight: 600; font-style: normal; font-display: block;
+  src: url("https://cdn.jsdelivr.net/npm/lato-font@3.0.0/fonts/lato-semibold/lato-semibold.woff2") format("woff2"); }
+@font-face { font-family: "Lato"; font-weight: 800; font-style: normal; font-display: block;
+  src: url("https://cdn.jsdelivr.net/npm/lato-font@3.0.0/fonts/lato-heavy/lato-heavy.woff2") format("woff2"); }
+
+:root {
+  /* ---- Screen ---- */
+  --screen-w: 720px;
+  --screen-h: 1600px;
+  --screen-radius: 20px;
+
+  /* ---- Colour: neutrals ---- */
+  --c-black: #000000;
+  --c-ink-muted: #33383a;         /* secondary label, card prompt */
+  --c-ink-disabled: #979797;      /* Buttons / disabled label */
+  --c-status-muted: #1e1e1e;      /* status bar on transaction screens (time at 60%) */
+  --c-white: #ffffff;
+  --c-gray-50: #f4f4f4;           /* transaction bg, key default, chip */
+  --c-gray-100: #e9e9e9;          /* amount-entry bg, key selected */
+  --c-gray-200: #d0d0d0;          /* status bar, divider, key pressed */
+
+  /* ---- Colour: action keys ---- */
+  --c-cancel-bg: #f1a7a7;
+  --c-cancel-ink: #8e0000;        /* icon at 60% */
+  --c-correct-bg: #ffea73;
+  --c-correct-ink: #705c07;       /* icon at 60% */
+  --c-valid-bg: #bcdf82;          /* also LED on, approved banner, check disc */
+  --c-valid-ink: #4b5934;         /* icon at 60%, LED stroke, approved text */
+  --c-danger: #ec0000;            /* CANCEL TRANSACTION label */
+
+  /* ---- Type ---- */
+  --font-ui: "Lato", system-ui, sans-serif;
+  --font-status: "Roboto", system-ui, sans-serif;
+  --fs-amount: 125px;             /* line-height auto (1.2) */
+  --fs-currency: 50px;
+  --ls-amount: 1.25px;
+  --fs-key: 56px;
+  --fs-cta: 32px;
+  --fs-prompt: 30px;              /* line-height 36px */
+  --lh-prompt: 36px;
+  --fs-label: 28px;               /* header, chips, approved sub-line */
+  --fs-status: 22px;              /* line-height 28px */
+
+  /* ---- Radius ---- */
+  --r-key: 20px;
+  --r-panel: 20px;
+  --r-chip: 10px;
+  --r-led: 4px;
+
+  /* ---- Elevation ---- */
+  --shadow-key: 0 2px 4px rgba(0, 0, 0, 0.15);
+  --shadow-sheet: 0 4px 4px rgba(0, 0, 0, 0.25);  /* amount-entry sheet */
+  --shadow-panel: 0 2px 4px rgba(0, 0, 0, 0.15);  /* transaction content panel */
+
+  /* ---- Motion (from Figma prototype reactions + Motion keyframes) ---- */
+  --ease-out: cubic-bezier(0, 0, 0.58, 1);         /* Figma EASE_OUT */
+  --ease-in-out: cubic-bezier(0.42, 0, 0.58, 1);   /* Figma EASE_IN_AND_OUT */
+  --ease-loader-start: cubic-bezier(0.5, 0, 0.5, 1);
+  --loader-cycle: 2000ms;
+}

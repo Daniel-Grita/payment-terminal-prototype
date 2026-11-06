@@ -1,0 +1,291 @@
+/* Layout and components. Values come from tokens.css or straight from the
+   Figma frames (positions in 720 × 1600 screen units). */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: #1c1c1e;
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+button { font: inherit; color: inherit; }
+img { display: block; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- Stage + device (prototype chrome, not part of the design) ---------- */
+
+.stage {
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+.device-fit {
+  /* sized by app.js to the scaled device so it centres correctly */
+  position: relative;
+}
+.device {
+  --bezel: 22px;
+  position: absolute; top: 0; left: 0;
+  width: calc(var(--screen-w) + var(--bezel) * 2);
+  height: calc(var(--screen-h) + var(--bezel) * 2);
+  padding: var(--bezel);
+  border-radius: 64px;
+  background: #0b0b0c;
+  box-shadow: 0 0 0 2px #2c2c2e, 0 40px 80px rgba(0, 0, 0, 0.45);
+  transform-origin: 0 0;
+  transform: scale(var(--scale, 0.5));
+}
+.screen {
+  position: relative;
+  width: var(--screen-w);
+  height: var(--screen-h);
+  border-radius: var(--screen-radius);
+  overflow: hidden;
+  background: var(--c-gray-50);
+  isolation: isolate;
+}
+
+/* ---------- Views ---------- */
+
+.view {
+  position: absolute; inset: 0;
+  display: none;
+}
+.view.is-active { display: block; }
+
+/* ---------- Status bar ---------- */
+
+.statusbar {
+  position: absolute; left: 0; top: 0;
+  width: 100%; height: 39px;
+  background: var(--c-gray-200);
+}
+.statusbar__time {
+  position: absolute; left: 9px; top: 6px;
+  font: 400 var(--fs-status) / 28px var(--font-status);
+  color: var(--c-black);
+}
+.statusbar__icons { position: absolute; right: 0; top: 0; width: 91px; height: 39px; }
+.statusbar--muted .statusbar__time { color: var(--c-status-muted); opacity: 0.6; }
+
+/* =====================================================================
+   S1 · Amount Entry
+   ===================================================================== */
+
+.view--entry { background: var(--c-gray-100); }
+
+.appbar {
+  position: absolute; left: 0; top: 39px;
+  width: 100%; height: 95px;
+  padding: 0 20px;
+  display: flex; align-items: center; gap: 20px;
+}
+.appbar__icon { flex: none; height: 100px; position: relative; }
+.appbar__icon--left { width: 56px; }
+.appbar__icon--left img { position: absolute; left: 0; top: 30px; width: 40px; height: 40px; }
+.appbar__icon--right { width: 48px; }
+.appbar__icon--right img { position: absolute; left: 0; top: 26px; width: 48px; height: 48px; }
+.appbar__title {
+  flex: 1;
+  text-align: center;
+  font-size: var(--fs-label); line-height: 28px;
+  text-transform: uppercase;
+  color: var(--c-black);
+}
+
+.sheet {
+  position: absolute; left: 5px; top: 136px;
+  width: 710px; height: 1386px;
+  background: var(--c-white);
+  border-radius: var(--r-panel) var(--r-panel) 0 0;
+  box-shadow: var(--shadow-sheet);
+}
+
+.chips {
+  position: absolute; left: 0; right: 0; top: 80px;
+  display: flex; justify-content: center; gap: 20px;
+}
+.chip {
+  height: 74px; padding: 20px;
+  border-radius: var(--r-chip);
+  background: var(--c-gray-50);
+  box-shadow: var(--shadow-key);
+  font-size: var(--fs-label); line-height: 34px;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+.chip--selected { color: var(--c-black); }
+
+/* ---------- Amount (shared by all screens) ---------- */
+
+.amount {
+  position: absolute; left: 0; right: 0;
+  display: flex; justify-content: center; align-items: flex-start; gap: 5px;
+  color: var(--c-black);
+  font-weight: 400;
+  letter-spacing: var(--ls-amount);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.amount__value { font-size: var(--fs-amount); font-variant-numeric: tabular-nums; }
+.amount__pad, .amount__cur { font-size: var(--fs-currency); }
+.amount__pad { visibility: hidden; }   /* mirrors € so the number stays centred, as in Figma */
+/* sheet coords: amount frame y404 + text y28. Figma places this frame at x92 in the
+   710px sheet, so the amount sits 5.5px right of centre; kept as designed (see report). */
+.amount--entry { top: 432px; left: 11px; }
+
+/* ---------- Keypad ---------- */
+
+.keypad {
+  position: absolute; left: 0; top: 842px;
+  width: 710px;
+  padding: 0 15px 15px;
+  display: grid;
+  grid-template-columns: repeat(3, 217px);
+  grid-auto-rows: 94px;
+  justify-content: space-between;
+  row-gap: 15px;
+}
+.key {
+  appearance: none; border: 0; margin: 0; padding: 20px;
+  border-radius: var(--r-key);
+  background: var(--c-gray-50);
+  box-shadow: var(--shadow-key);
+  font-size: var(--fs-key); line-height: 1.2; font-weight: 400;
+  color: var(--c-black);
+  display: grid; place-items: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.key:active, .key.is-pressed { background: var(--c-gray-200); }   /* Buttons / Status=pressed */
+.key:focus-visible { outline: 4px solid var(--c-black); outline-offset: 3px; }
+.key--zero { grid-column: 2; }
+.key--action { grid-row: 5; }
+.key--cancel  { grid-column: 1; background: var(--c-cancel-bg); }
+.key--correct { grid-column: 2; background: var(--c-correct-bg); }
+.key--valid   { grid-column: 3; background: var(--c-valid-bg); }
+/* The file draws no pressed state for the coloured keys; this darkening is a
+   prototype deviation so a press still registers (see report). */
+.key--action:active, .key--action.is-pressed { filter: brightness(0.9); }
+.key--cancel img  { width: 39px; height: 38px; }
+.key--correct img { width: 44px; height: 43px; }
+.key--valid img   { width: 50px; height: 38px; }
+
+.navbar {
+  position: absolute; left: 0; bottom: 0;
+  width: 100%; height: 78px;
+  background: var(--c-black);
+}
+.navbar img { position: absolute; left: 82px; top: 7px; width: 556px; height: 64px; }
+
+/* =====================================================================
+   S2–S7 · Transaction screens
+   ===================================================================== */
+
+.view--txn { background: var(--c-gray-50); }
+
+.txn-row {
+  position: absolute; left: 0; width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 10px;
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  color: var(--c-black);
+}
+.txn-row--name { top: 39px; height: 38px; line-height: 28px; }
+.txn-row--meta { top: 77px; height: 38px; line-height: 34px; border-top: 1px solid var(--c-gray-200); }
+.txn-row--leds { top: 115px; height: 30px; align-items: flex-start; }
+.txn-debit { font-weight: 800; }
+.txn-scheme { line-height: 28px; }
+.txn-date { width: 290px; text-align: center; }
+.txn-cb { width: 44px; height: 30px; margin-left: auto; }
+
+.leds { display: flex; gap: 5px; }
+.led {
+  width: 20px; height: 20px;
+  border: 1px solid var(--c-valid-ink);
+  border-radius: var(--r-led);
+}
+.led--on { background: var(--c-valid-bg); }
+
+.amount--txn { top: 188px; }
+
+.panel {
+  position: absolute; left: 5px; top: 449px;
+  width: 710px; height: 1151px;
+  background: var(--c-white);
+  border-radius: var(--r-panel) var(--r-panel) 0 0;
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+}
+.panel__prompt {
+  position: absolute; left: 0; right: 0; top: 40px;
+  margin: 0;
+  text-align: center;
+  font-size: var(--fs-prompt); line-height: var(--lh-prompt); font-weight: 400;
+  text-transform: uppercase;
+  color: var(--c-black);
+}
+.panel__prompt--muted { color: var(--c-ink-muted); }
+
+/* ---------- Loader ---------- */
+
+.loader {
+  position: absolute; left: 270px; top: 375px;
+  width: 170px; height: 170px;
+}
+.loader__ring { position: absolute; inset: 0; width: 170px; height: 170px; }
+.loader__logo { position: absolute; left: 63px; top: 48px; width: 45px; height: 75px; }
+
+/* ---------- Present Card ---------- */
+
+.schemes { position: absolute; left: 21px; top: 145px; width: 679px; height: 55px; }
+.terminal-art { position: absolute; left: 81px; top: 249px; width: 548px; height: 548px; object-fit: cover; } /* Figma fill mode: FILL */
+.cta {
+  position: absolute; left: 11px; top: 1064px;
+  width: 690px; height: 72px;
+  appearance: none; border: 0; margin: 0; padding: 20px;
+  border-radius: var(--r-key);
+  background: var(--c-gray-50);
+  box-shadow: var(--shadow-key);
+  opacity: 0.9;
+  font-size: var(--fs-cta); font-weight: 600; line-height: 38px;
+  text-transform: uppercase;
+  color: var(--c-danger);
+  display: grid; place-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.cta:active, .cta.is-pressed { background: var(--c-gray-200); }
+.cta:focus-visible { outline: 4px solid var(--c-black); outline-offset: 3px; }
+
+/* ---------- Approved ---------- */
+
+.view--approved { cursor: pointer; }
+.banner {
+  position: absolute; left: 0; top: 0;
+  width: 710px; height: 84px;
+  background: linear-gradient(90deg, var(--c-valid-bg) 0%, var(--c-gray-50) 90%);
+  color: var(--c-valid-ink);
+  text-align: center;
+  text-transform: uppercase;
+}
+.banner__title { position: absolute; left: 0; right: 0; top: 7px; font-size: 30px; line-height: 36px; }
+.banner__sub { position: absolute; left: 0; right: 0; top: 43px; font-size: var(--fs-label); line-height: 34px; font-weight: 600; }
+.banner__check {
+  position: absolute; left: 631px; top: 8px;
+  width: 69px; height: 69px;
+  border-radius: 50%;
+  background: var(--c-valid-bg);
+  display: grid; place-items: center;
+}
+.banner__check img { width: 30px; height: 30px; }
+.cb-logo { position: absolute; left: 91px; top: 323px; width: 527px; height: 316px; }
+.new-sale { position: absolute; inset: 0; opacity: 0; border: 0; background: transparent; cursor: pointer; }
+.new-sale:focus-visible { opacity: 1; outline: 4px solid var(--c-black); outline-offset: -8px; }

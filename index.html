@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payment Terminal · Flow 2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=block">
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="stage">
+    <div class="device-fit" id="deviceFit">
+      <div class="device" id="device">
+        <div class="screen" id="screen">
+
+          <!-- S1 · Amount Entry -->
+          <section class="view view--entry" data-view="amount-entry" aria-label="Saisie du montant">
+            <div class="statusbar">
+              <span class="statusbar__time">16:25</span>
+              <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
+            </div>
+            <header class="appbar">
+              <span class="appbar__icon appbar__icon--left" aria-hidden="true"><img src="assets/icon-burger.svg" alt=""></span>
+              <span class="appbar__title">Originator Name</span>
+              <span class="appbar__icon appbar__icon--right" aria-hidden="true"><img src="assets/icon-swap.svg" alt=""></span>
+            </header>
+
+            <div class="sheet">
+              <div class="chips" aria-hidden="true">
+                <span class="chip chip--selected">debit</span>
+                <span class="chip">avec pourboires</span>
+              </div>
+
+              <div class="amount amount--entry" data-amount>
+                <span class="amount__pad" aria-hidden="true">€</span>
+                <span class="amount__value" data-amount-value>0,00</span>
+                <span class="amount__cur" aria-hidden="true">€</span>
+              </div>
+
+              <div class="keypad" role="group" aria-label="Clavier">
+                <button class="key" type="button" data-key="1">1</button>
+                <button class="key" type="button" data-key="2">2</button>
+                <button class="key" type="button" data-key="3">3</button>
+                <button class="key" type="button" data-key="4">4</button>
+                <button class="key" type="button" data-key="5">5</button>
+                <button class="key" type="button" data-key="6">6</button>
+                <button class="key" type="button" data-key="7">7</button>
+                <button class="key" type="button" data-key="8">8</button>
+                <button class="key" type="button" data-key="9">9</button>
+                <button class="key key--zero" type="button" data-key="0">0</button>
+                <button class="key key--action key--cancel" type="button" data-key="clear" aria-label="Annuler le montant">
+                  <img src="assets/icon-cancel.svg" alt="">
+                </button>
+                <button class="key key--action key--correct" type="button" data-key="back" aria-label="Corriger">
+                  <img src="assets/icon-correction.svg" alt="">
+                </button>
+                <button class="key key--action key--valid" type="button" data-key="ok" aria-label="Valider">
+                  <img src="assets/icon-validation.svg" alt="">
+                </button>
+              </div>
+            </div>
+
+            <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
+          </section>
+
+          <!-- S2–S7 are rendered from one template in app.js -->
+
+        </div>
+      </div>
+    </div>
+
+    <p class="sr-only" id="announcer" aria-live="polite"></p>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
