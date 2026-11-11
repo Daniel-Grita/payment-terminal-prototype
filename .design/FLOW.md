@@ -23,7 +23,9 @@ S9 ticket ─ CLOSE (Figma "Back") ─▶ S8
 ```
 
 Send by email, Scan QR code, Print, and the ticket's @ / print buttons are shown but inert,
-as in Figma. The ticket's AMOUNT line shows the amount entered.
+as in Figma. The ticket's AMOUNT line shows the amount entered. On request, the ticket's
+buttons have no outline and 20 px corners: @ and print are white, CLOSE is black (Figma has
+grey-outlined 4 px buttons and a dark grey CLOSE). Sizes and positions are Figma's.
 
 ## Update 2026-11-11 — Transaction History flow
 

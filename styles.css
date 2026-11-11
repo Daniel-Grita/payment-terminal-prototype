@@ -4,7 +4,8 @@
 *, *::before, *::after { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
-  background: #e6e6e8;
+  background: var(--stage-bg, #e6e6e8);   /* set from the stage menu */
+  transition: background-color 200ms ease-out;
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
@@ -18,6 +19,95 @@ img { display: block; }
 }
 
 /* ---------- Stage + device (prototype chrome, not part of the design) ---------- */
+
+/* Stage menu: top-left of the window, real CSS px (not scaled with the terminal). */
+.stage-menu {
+  position: fixed; top: 16px; left: 16px; z-index: 10;
+  font-family: var(--font-ui); color: #1c1c1e;
+}
+.stage-menu__toggle {
+  width: 44px; height: 44px; padding: 0;
+  display: grid; place-items: center;
+  border: 0; border-radius: 12px;
+  background: rgba(0, 0, 0, 0.06); color: #1c1c1e;
+  cursor: pointer;
+  transition: opacity 300ms ease-out, background-color 150ms ease-out;
+}
+.stage-menu__toggle:hover, .stage-menu__toggle[aria-expanded="true"] { background: rgba(0, 0, 0, 0.12); }
+.stage-menu[data-ink="light"] .stage-menu__toggle { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.stage-menu[data-ink="light"] .stage-menu__toggle:hover,
+.stage-menu[data-ink="light"] .stage-menu__toggle[aria-expanded="true"] { background: rgba(255, 255, 255, 0.24); }
+.stage-menu.is-idle .stage-menu__toggle { opacity: 0; }
+.stage-menu__toggle:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
+
+.stage-menu__panel {
+  position: absolute; top: 52px; left: 0;
+  width: 232px; padding: 16px;
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.16);
+  animation: stage-menu-in 160ms ease-out;
+}
+@keyframes stage-menu-in { from { opacity: 0; transform: translateY(-4px); } }
+.stage-menu__group { margin: 0; padding: 0; border: 0; min-width: 0; }
+.stage-menu__title {
+  padding: 0; margin-bottom: 12px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: #6b6b70;
+}
+.swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.swatch { position: relative; display: block; aspect-ratio: 1; cursor: pointer; }
+.swatch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.swatch__chip {
+  display: block; width: 100%; height: 100%; border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  transition: box-shadow 120ms ease-out;
+}
+.swatch input:checked + .swatch__chip {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12), 0 0 0 2px #fff, 0 0 0 4px #1c1c1e;
+}
+.swatch input:focus-visible + .swatch__chip { outline: 2px solid #0a84ff; outline-offset: 5px; }
+
+.stage-menu__custom {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 16px; padding-top: 16px; border-top: 1px solid #ececee;
+}
+.stage-menu__picker {
+  flex: none; width: 36px; height: 36px; padding: 0;
+  border: 0; border-radius: 8px; background: none; cursor: pointer;
+}
+.stage-menu__picker::-webkit-color-swatch-wrapper { padding: 0; }
+.stage-menu__picker::-webkit-color-swatch { border: 0; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
+.stage-menu__picker::-moz-color-swatch { border: 0; border-radius: 8px; }
+.stage-menu__hex {
+  flex: 1; min-width: 0; height: 36px; padding: 0 10px;
+  border: 1px solid #d8d8dc; border-radius: 8px;
+  font: 500 14px/1 ui-monospace, "Fira Mono", monospace; color: inherit; text-transform: uppercase;
+}
+.stage-menu__hex:focus-visible { outline: 2px solid #0a84ff; outline-offset: 1px; border-color: transparent; }
+.stage-menu__hex[aria-invalid="true"] { border-color: #ec0000; }
+.stage-menu__picker:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
+
+.stage-menu__group + .stage-menu__group { margin-top: 20px; }
+.stage-menu__switch {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.stage-menu__switch input {
+  appearance: none; flex: none; position: relative;
+  width: 40px; height: 24px; margin: 0;
+  border-radius: 12px; background: #d8d8dc;
+  cursor: pointer; transition: background-color 150ms ease-out;
+}
+.stage-menu__switch input::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 150ms ease-out;
+}
+.stage-menu__switch input:checked { background: #1c1c1e; }
+.stage-menu__switch input:checked::after { transform: translateX(16px); }
+.stage-menu__switch input:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
 
 .stage {
   height: 100%;
@@ -42,6 +132,7 @@ img { display: block; }
   filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.28));
   user-select: none; -webkit-user-drag: none;
 }
+.no-device-shadow .device__body { filter: none; }   /* stage menu › Drop shadow off */
 .screen {
   position: absolute; left: 47px; top: 362px;
   width: var(--screen-w);
@@ -400,21 +491,24 @@ button.receipt-option:focus-visible { outline: 4px solid var(--c-black); outline
   position: absolute; top: 1384px; width: 332px; height: 88px;
   display: grid; place-items: center;
   background: var(--c-white);
-  border: 1px solid var(--c-ticket-border); border-radius: 4px;
+  border-radius: var(--r-key);   /* no outline, 20 px corners: on request, not Figma's 4 px outlined buttons */
 }
 .ticket__btn--email { left: 20px; }
 .ticket__btn--print { left: 368px; }
 .ticket__btn img { width: 40px; height: 40px; }
+/* Black, no outline, 20 px corners (on request; Figma has a grey outlined button).
+   On the payment receipt it covers the SKIP button under the overlay exactly
+   (15–705 × 1497–1585), so SKIP doesn't show around its edges. */
 .ticket__close {
-  position: absolute; left: 20px; top: 1492px; width: 680px; height: 88px;
+  position: absolute; left: 15px; top: 1497px; width: 690px; height: 88px;
   margin: 0; padding: 20px;
-  border: 1px solid var(--c-ticket-border); border-radius: 4px;
-  background: var(--c-ink-muted);
+  border: 0; border-radius: var(--r-key);
+  background: var(--c-black);
   font: inherit; font-size: 40px; font-weight: 600; line-height: 48px;
   text-transform: uppercase; color: var(--c-white);
   cursor: pointer;
 }
-.ticket__close:active { background: var(--c-black); }
+.ticket__close:active { background: var(--c-ink-muted); }
 .ticket__close:focus-visible { outline: 4px solid var(--c-white); outline-offset: -8px; }
 
 /* =====================================================================
@@ -641,7 +735,7 @@ button.appbar__icon:focus-visible { outline: 4px solid var(--c-black); outline-o
 .ticket--details .statusbar { display: none; }
 .ticket--details .ticket__paper { top: 20px; }
 .ticket--details .ticket__btn { top: 1321px; }
-.ticket--details .ticket__close { top: 1429px; }
+.ticket--details .ticket__close { left: 20px; top: 1429px; width: 680px; }
 
 /* ---------- H1 · Side menu ---------- */
 

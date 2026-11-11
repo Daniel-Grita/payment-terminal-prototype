@@ -51,6 +51,15 @@ amount-entry screen: ✓ runs a payment, ☰ opens the menu.
 Sales approved in the payment flow are added to the history under today's date, with
 their amount and time.
 
+### Stage menu (for recording)
+
+The ☰ in the window's top-left corner (outside the terminal) opens the stage settings.
+**Background** has eight presets (including green and blue screen for keying) and a
+custom colour picker or hex field; **Drop shadow** turns the terminal's shadow on or off.
+Both choices are remembered in this browser. The button fades out 3 s after the page opens so it stays out of recordings;
+move the pointer into the top-left corner, or Tab to it, to bring it back. Esc or a
+click outside closes the panel.
+
 **Keypad:** digits fill from the cents (5 → 0,05 → 0,50 → 5,00 €), ← deletes,
 ✕ clears, ✓ at 0,00 € shakes the amount. Maximum 99 999,99 €.
 
@@ -60,6 +69,7 @@ their amount and time.
 |---|---|
 | `index.html` | Amount-entry screen markup |
 | `app.js` | State machine, timers, keypad logic, transaction screens, loader motion |
+| `stage-menu.js` | Stage menu (background colour), prototype chrome outside the terminal |
 | `styles.css` | Layout, at the design's native 720 × 1600, scaled to fit the window |
 | `tokens.css` | Colour, type, radius, shadow and motion values read from Figma |
 | `assets/` | Icons and artwork exported from Figma |

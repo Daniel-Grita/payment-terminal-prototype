@@ -15,6 +15,39 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Stage menu: prototype chrome for recording, not part of the terminal design (stage-menu.js) -->
+  <div class="stage-menu" id="stageMenu">
+    <button class="stage-menu__toggle" type="button" aria-label="Stage settings" aria-expanded="false" aria-controls="stageMenuPanel">
+      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="stage-menu__panel" id="stageMenuPanel" hidden>
+      <fieldset class="stage-menu__group">
+        <legend class="stage-menu__title">Background</legend>
+        <div class="swatches">
+          <label class="swatch" title="Studio grey"><input type="radio" name="stage-bg" value="#e6e6e8"><span class="swatch__chip" style="--swatch:#e6e6e8"></span><span class="sr-only">Studio grey</span></label>
+          <label class="swatch" title="White"><input type="radio" name="stage-bg" value="#ffffff"><span class="swatch__chip" style="--swatch:#ffffff"></span><span class="sr-only">White</span></label>
+          <label class="swatch" title="Warm grey"><input type="radio" name="stage-bg" value="#ebe7e1"><span class="swatch__chip" style="--swatch:#ebe7e1"></span><span class="sr-only">Warm grey</span></label>
+          <label class="swatch" title="Mid grey"><input type="radio" name="stage-bg" value="#8e8e93"><span class="swatch__chip" style="--swatch:#8e8e93"></span><span class="sr-only">Mid grey</span></label>
+          <label class="swatch" title="Charcoal"><input type="radio" name="stage-bg" value="#2c2c2e"><span class="swatch__chip" style="--swatch:#2c2c2e"></span><span class="sr-only">Charcoal</span></label>
+          <label class="swatch" title="Black"><input type="radio" name="stage-bg" value="#000000"><span class="swatch__chip" style="--swatch:#000000"></span><span class="sr-only">Black</span></label>
+          <label class="swatch" title="Green screen"><input type="radio" name="stage-bg" value="#00b140"><span class="swatch__chip" style="--swatch:#00b140"></span><span class="sr-only">Green screen</span></label>
+          <label class="swatch" title="Blue screen"><input type="radio" name="stage-bg" value="#0047bb"><span class="swatch__chip" style="--swatch:#0047bb"></span><span class="sr-only">Blue screen</span></label>
+        </div>
+        <div class="stage-menu__custom">
+          <input class="stage-menu__picker" type="color" value="#e6e6e8" aria-label="Pick a custom colour">
+          <input class="stage-menu__hex" type="text" value="#e6e6e8" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex colour">
+        </div>
+      </fieldset>
+      <fieldset class="stage-menu__group">
+        <legend class="stage-menu__title">Terminal</legend>
+        <label class="stage-menu__switch">
+          <span>Drop shadow</span>
+          <input type="checkbox" role="switch" name="device-shadow" checked>
+        </label>
+      </fieldset>
+    </div>
+  </div>
+
   <main class="stage">
     <div class="device-fit" id="deviceFit">
       <div class="device" id="device">
@@ -247,5 +280,6 @@
   </main>
 
   <script src="app.js"></script>
+  <script src="stage-menu.js"></script>
 </body>
 </html>
