@@ -865,89 +865,152 @@ button.menu__item:focus-visible { outline: 4px solid var(--c-black); outline-off
 .view--app p { margin: 0; }
 
 /* ---------- D1 · Daily summary ----------
-   Matched to the manual's "Total Journalier" screen (384 px wide → ×1.875). */
+   Figma 1732:26911 (Operations), 1850:5027 (Payment methods) and, behind the
+   "ECR & Quick mode" menu switch, 2563:15083. */
 
-/* Grey card head: period and total, centred */
+/* Grey card head: period, selected filters and total, centred (Figma "Summary") */
 .ds-head {
-  position: absolute; left: 5px; top: 134px; width: 710px; height: 154px;
-  display: flex; flex-direction: column; align-items: center; gap: 18px; padding-top: 28px;
+  position: absolute; left: 5px; top: 134px; width: 710px; height: 169px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 20px;
   background: var(--c-gray-50);
   border-radius: 15px 15px 0 0;
   box-shadow: -5px 0 0 var(--c-gray-50), 5px 0 0 var(--c-gray-50);   /* fills the side gaps, see .panel */
 }
 .ds-head__line {
-  font-size: 23px; line-height: 29px; text-align: center; color: var(--c-ink-muted);
+  font-size: 24px; line-height: 29px; text-align: center; color: var(--c-black);
   font-variant-numeric: tabular-nums;
 }
-.ds-head__line + .ds-head__line { text-transform: uppercase; }
+.ds-head__line:last-child { text-transform: uppercase; }
+.ds-head__chips { display: flex; gap: 10px; }
+.ds-head__chips span {
+  padding: 4px 9px; border: 1px solid var(--c-gray-200); border-radius: 4px;
+  background: var(--c-gray-100);
+  font-size: 26px; line-height: 31px; text-transform: uppercase; color: var(--c-black); white-space: nowrap;
+}
 
-/* OPERATIONS | PAYMENT METHODS: same grey, the selected tab underlined across its half */
+/* OPERATIONS | PAYMENT METHODS (Figma "Date filters"): the selected tab has a 2 px black underline */
 .ds-tabs {
-  position: absolute; left: 0; top: 288px; width: 720px; height: 53px;
+  position: absolute; left: 0; top: 303px; z-index: 2; width: 720px; height: 74px;
   display: grid; grid-template-columns: 1fr 1fr;
   background: var(--c-gray-50);
+  box-shadow: var(--shadow-key);
 }
 .ds-tab {
   position: relative;
   appearance: none; border: 0; margin: 0; padding: 0 10px; background: none;
-  font-size: 25px; line-height: 30px; text-transform: uppercase; color: var(--c-ink-muted);
+  font: inherit; font-size: 28px; line-height: 34px; text-transform: uppercase; color: var(--c-black);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.ds-tab:first-child { padding-left: 5px; }   /* centres in the card, not the screen */
+.ds-tab:first-child { padding-left: 15px; }   /* centres in the card, not the screen */
+.ds-tab:last-child { padding-right: 15px; }
 .ds-tab[aria-selected="true"]::after {
-  content: ""; position: absolute; left: 5px; right: 0; bottom: 0; height: 3px;
-  background: var(--c-ink-muted);
+  content: ""; position: absolute; left: 5px; right: 0; bottom: 0; height: 2px;
+  background: var(--c-black);
 }
 .ds-tab:last-child[aria-selected="true"]::after { left: 0; right: 5px; }
 .ds-tab:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }
 
 .ds-panel {
-  position: absolute; left: 0; top: 341px; width: 720px; height: 1181px;
+  position: absolute; left: 5px; top: 377px; width: 710px; height: 1145px;
   overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
 }
 .ds-panel::-webkit-scrollbar { display: none; }
 .ds-panel[hidden] { display: none; }
 
-.ds-table { width: 100%; border-collapse: collapse; color: var(--c-ink-muted); font-variant-numeric: tabular-nums; }
-.ds-table th {
+/* Operations: Figma "List Item"s — 15 px padding, #d0d0d0 hairlines down the sides and between blocks */
+.ds-table { width: 100%; border-collapse: collapse; color: var(--c-black); font-variant-numeric: tabular-nums; }
+.ds-table thead th {
   position: sticky; top: 0; z-index: 1;
-  height: 70px; padding: 0 23px 0 19px;
+  height: 61px; padding: 15px;
   background: var(--c-gray-200);
-  font-size: 25px; line-height: 30px; font-weight: 600; text-transform: uppercase; text-align: left;
-  color: var(--c-status-muted);
+  box-shadow: 1px 0 0 var(--c-gray-200);   /* no hairline between the two sticky cells */
+  font-size: 26px; line-height: 31px; font-weight: 700; text-transform: uppercase; text-align: left;
 }
 .ds-table th:last-child, .ds-table td:last-child { text-align: right; white-space: nowrap; }
-.ds-table td { padding: 0 23px 0 19px; font-size: 24px; line-height: 29px; }
-.ds-table tbody, .ds-table tfoot { border-bottom: 1px solid var(--c-divider); }
-.ds-table tbody tr:first-child td, .ds-table tfoot td { padding-top: 22px; }
-.ds-table tbody tr:last-child td, .ds-table tfoot td { padding-bottom: 22px; }
-.ds-table tbody tr.ds-sub:last-child td { padding-bottom: 28px; }
-/* "• Debits (2)": lighter, a touch smaller, with a bullet */
-.ds-sub td { padding-top: 9px; font-size: 23px; color: var(--c-sub); }
-.ds-sub td:first-child { padding-left: 34px; }
-.ds-sub td:first-child::before { content: "•"; margin-right: 7px; }
-.ds-table tfoot td { font-weight: 700; text-transform: uppercase; color: var(--c-status-muted); }
+.ds-table td { padding: 0 15px; font-size: 24px; line-height: 29px; }
+.ds-table tbody, .ds-table tfoot {
+  border-left: 1px solid var(--c-gray-200); border-right: 1px solid var(--c-gray-200);
+  border-bottom: 1px solid var(--c-gray-200);
+}
+.ds-table tbody tr:first-child td { padding-top: 15px; }
+.ds-table tbody tr:last-child td { padding-bottom: 15px; }
+/* "• Debits (10)": grey bullet-list rows, 15 px apart; level 2 sits one step further in */
+.ds-sub td { padding-top: 15px; color: var(--c-sub); }
+.ds-sub td:first-child { padding-left: 35px; }
+.ds-sub td:first-child::before { content: "•"; display: inline-block; width: 26px; padding-left: 6px; }
+.ds-sub--2 td:first-child { padding-left: 71px; }
+.ds-table tfoot td { padding: 15px; font-size: 26px; line-height: 31px; font-weight: 700; text-transform: uppercase; }
+
+/* "More infos" (ECR & Quick mode): grey heading band, then the footnotes */
+.ds-info__head {
+  height: 61px; padding: 15px;
+  background: var(--c-gray-200);
+  font-size: 26px; line-height: 31px; font-weight: 700; text-transform: uppercase; color: var(--c-black);
+}
+.ds-info__body { padding: 15px; font-size: 24px; line-height: 29px; color: var(--c-black); }
+.ds-info__body p + p { margin-top: 29px; }
+
+/* Payment methods: one collapsible group per family, a 4-column grid inside */
+.ds-groups { border-left: 1px solid var(--c-gray-200); border-right: 1px solid var(--c-gray-200); }
+.ds-group__head {
+  position: sticky; top: 0; z-index: 1;
+  width: 100%; height: 62px;
+  display: flex; align-items: center; gap: 15px; padding: 15px;
+  appearance: none; border: 0; margin: 0;
+  background: var(--c-gray-200);
+  font: inherit; font-size: 26px; line-height: 31px; font-weight: 700; text-transform: uppercase; color: var(--c-black);
+  text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.ds-group__name { flex: 1; }
+.ds-group__head img { width: 32px; height: 32px; flex: none; transition: transform 200ms var(--ease-out); }
+.ds-group__head[aria-expanded="false"] img { transform: rotate(-90deg); }
+.ds-group__head:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }
+.ds-grid[hidden] { display: none; }
+.ds-grid {
+  width: 100%; table-layout: fixed; border-collapse: collapse;
+  color: var(--c-black); font-variant-numeric: tabular-nums;
+}
+.ds-grid th, .ds-grid td { border-bottom: 1px solid var(--c-gray-200); }
+.ds-grid th + th, .ds-grid th + td, .ds-grid td + td { border-left: 1px solid var(--c-gray-200); }
+.ds-grid thead th {
+  height: 54px; padding: 0 4px;
+  background: var(--c-gray-50);
+  font-size: 20px; line-height: 24px; font-weight: 400; text-transform: uppercase; text-align: center;
+}
+.ds-grid tbody th, .ds-grid tbody td, .ds-grid tfoot th, .ds-grid tfoot td {
+  height: 51px; padding: 0 15px; font-size: 24px; line-height: 29px; font-weight: 400;
+}
+.ds-grid td { text-align: right; white-space: nowrap; }
+.ds-grid tbody th, .ds-grid tfoot th { text-align: center; }
+.ds-grid tfoot th { text-transform: uppercase; }
+.ds-type { display: inline-flex; align-items: center; justify-content: center; gap: 15px; vertical-align: middle; }
+.ds-type img { display: block; flex: none; }
 
 /* ---------- D2 · Settings ----------
    Matched to the manual's "Paramètres" screen (395 px wide → ×1.82). */
 
+/* Figma 3189:10821 "Settings - EXPECTED": white card 5 px from the screen sides and 3 px
+   under the app bar, with the grey screen background showing in those gaps. */
 .set-card {
-  position: absolute; left: 22px; top: 134px; width: 676px; height: 1388px;
+  position: absolute; left: 5px; top: 137px; width: 710px; height: 1385px;
   background: var(--c-white);
-  border-radius: 18px 18px 0 0;
+  border-radius: 15px 15px 0 0;
+  overflow: hidden;
 }
 .set-list { margin: 0; padding: 0; list-style: none; }
 .set-row {
-  width: 100%; height: 126px;
-  display: flex; align-items: center; gap: 30px; padding: 0 29px 0 24px;
+  width: 100%; height: 115px;
+  display: flex; align-items: center; gap: 31px; padding: 0 18px 0 22px;
   appearance: none; border: 0; margin: 0;
-  border-bottom: 1px solid var(--c-divider);
+  border-bottom: 1px solid var(--c-gray-200);
   background: none;
-  font: inherit; font-size: 24px; line-height: 29px; color: var(--c-status-muted); text-align: left;
+  font: inherit; font-size: 26px; line-height: 31px; color: var(--c-black); text-align: left;
 }
-.set-row img { flex: none; width: 28px; height: 28px; }
-.set-row__text { flex: 1; }
-.set-row img.set-row__chev { width: 32px; height: 32px; }
+.set-row img { flex: none; width: 48px; height: 48px; }
+.set-row__text { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.set-row__hint { font-size: 24px; line-height: 29px; font-style: italic; color: var(--c-sub); }
+.set-row img.set-row__chev { width: 36px; height: 36px; }
 button.set-row { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 button.set-row:active { background: var(--c-gray-50); }
 button.set-row:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }

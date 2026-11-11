@@ -29,6 +29,13 @@
         </div>
       </fieldset>
       <fieldset class="stage-menu__group">
+        <legend class="stage-menu__title">Upcoming features</legend>
+        <label class="stage-menu__switch">
+          <span>ECR &amp; Quick mode</span>
+          <input type="checkbox" role="switch" data-flag="ecr-modes">
+        </label>
+      </fieldset>
+      <fieldset class="stage-menu__group">
         <legend class="stage-menu__title">Background</legend>
         <div class="swatches">
           <label class="swatch" title="Studio grey"><input type="radio" name="stage-bg" value="#e6e6e8"><span class="swatch__chip" style="--swatch:#e6e6e8"></span><span class="sr-only">Studio grey</span></label>
@@ -257,10 +264,9 @@
           </section>
 
           <!-- ================= Daily summary ================= -->
-          <!-- No Figma frames: built from the PayXpress manual's "Total journalier" screens,
-               in this file's components (app bar, panel, chips, day header, bottom sheet). -->
-
-          <!-- D1 · Daily summary (menu › Daily summary) -->
+          <!-- D1 · Daily summary (menu › Daily summary)
+               Figma 1732:26911 (Operations) and 1850:5027 (Payment methods); the figures are
+               computed from the sample activity in app.js so that every total adds up. -->
           <section class="view view--app" data-view="summary" aria-label="Daily summary">
             <div class="statusbar statusbar--app">
               <span class="statusbar__time">16:25</span>
@@ -275,9 +281,10 @@
 
             <div class="app-panel"></div>
 
-            <!-- Grey card head: the business day on show and its total (as in the manual) -->
+            <!-- Grey card head: the business day on show, the selected filters and the total -->
             <div class="ds-head">
               <p class="ds-head__line" data-ds-period></p>
+              <div class="ds-head__chips"><span>debit</span><span>cb ctls merch…</span></div>
               <p class="ds-head__line">Total of transactions: <span data-ds-total></span></p>
             </div>
 
@@ -303,18 +310,17 @@
               <h1 class="appbar-app__title">Settings</h1>
             </header>
 
-            <!-- White card inset from the screen sides, as in the manual's Settings screen -->
+            <!-- Figma 3189:10821 "Settings - EXPECTED" -->
             <div class="set-card">
-              <!-- Only Daily summary is wired; the other entries are shown as in the manual -->
+              <!-- Only Daily Summary is wired; the other entries are shown as designed -->
               <ul class="set-list">
-                <li><span class="set-row"><img src="assets/set-initiator.svg" alt=""><span class="set-row__text">Initiator settings</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
-                <li><span class="set-row"><img src="assets/set-security.svg" alt=""><span class="set-row__text">Security settings</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
-                <li><span class="set-row"><img src="assets/set-sessions.svg" alt=""><span class="set-row__text">Sessions</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+                <li><span class="set-row"><img src="assets/set-euro.svg" alt=""><span class="set-row__text"><span>Transactions</span><span class="set-row__hint">General, Tips, Dematerialization, Offline mode</span></span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+                <li><span class="set-row"><img src="assets/set-beneficiaries.svg" alt=""><span class="set-row__text">Multi-beneficiaries</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
                 <li><span class="set-row"><img src="assets/set-concert.svg" alt=""><span class="set-row__text">Concert configuration</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
-                <li><span class="set-row"><img src="assets/set-offline.svg" alt=""><span class="set-row__text">Offline mode</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
-                <li><span class="set-row"><img src="assets/set-transaction.svg" alt=""><span class="set-row__text">Transaction</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
-                <li><button class="set-row" type="button" data-action="open-summary-settings"><img src="assets/set-summary.svg" alt=""><span class="set-row__text">Daily summary</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></button></li>
-                <li><span class="set-row"><img src="assets/set-tip.svg" alt=""><span class="set-row__text">Tip</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+                <li><span class="set-row"><img src="assets/set-sessions.svg" alt=""><span class="set-row__text">Sessions</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+                <li><button class="set-row" type="button" data-action="open-summary-settings"><img src="assets/set-summary.svg" alt=""><span class="set-row__text">Daily Summary</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></button></li>
+                <li><span class="set-row"><img src="assets/set-security.svg" alt=""><span class="set-row__text">Security</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+                <li><span class="set-row"><img src="assets/set-debug.svg" alt=""><span class="set-row__text">Debug</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
               </ul>
             </div>
 
