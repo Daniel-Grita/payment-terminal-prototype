@@ -27,6 +27,10 @@ as in Figma. The ticket's AMOUNT line shows the amount entered. On request, the 
 buttons have no outline and 20 px corners: @ and print are white, CLOSE is black (Figma has
 grey-outlined 4 px buttons and a dark grey CLOSE). Sizes and positions are Figma's.
 
+The white keypad sheet, transaction panel and history panel reach the screen's side edges
+(Figma insets them 5 px). The grey gaps read as light lines against the black bezel,
+running into the rounded bottom corners. Content keeps Figma's coordinates.
+
 ## Update 2026-11-11 — Transaction History flow
 
 Figma file `SgRqzQkSTAUxX8HAyYqgrp`, section `5991:6705` "Transaction History" (flow start

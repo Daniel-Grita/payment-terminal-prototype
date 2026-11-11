@@ -219,9 +219,12 @@ img { display: block; }
   color: var(--c-black);
 }
 
+/* Full width (Figma: 5 px in from each side). The 5 px strips of grey showed as light
+   lines along the screen's edges, next to the black bezel. Contents keep their Figma
+   positions: children are offset 5 px to make up for it. */
 .sheet {
-  position: absolute; left: 5px; top: 136px;
-  width: 710px; height: 1386px;
+  position: absolute; left: 0; top: 136px;
+  width: 720px; height: 1386px;
   background: var(--c-white);
   border-radius: var(--r-panel) var(--r-panel) 0 0;
   box-shadow: var(--shadow-sheet);
@@ -258,12 +261,12 @@ img { display: block; }
 .amount__pad { visibility: hidden; }   /* mirrors € so the number stays centred, as in Figma */
 /* sheet coords: amount frame y404 + text y28. Figma places this frame at x92 in the
    710px sheet, so the amount sits 5.5px right of centre; kept as designed (see report). */
-.amount--entry { top: 432px; left: 11px; }
+.amount--entry { top: 432px; left: 16px; }
 
 /* ---------- Keypad ---------- */
 
 .keypad {
-  position: absolute; left: 0; top: 842px;
+  position: absolute; left: 5px; top: 842px;
   width: 710px;
   padding: 0 15px 15px;
   display: grid;
@@ -342,7 +345,10 @@ img { display: block; }
   width: 710px; height: 1151px;
   background: var(--c-white);
   border-radius: var(--r-panel) var(--r-panel) 0 0;
-  box-shadow: var(--shadow-panel);
+  /* Two white copies 5 px left and right fill Figma's 5 px side gaps, which showed as
+     light lines down the screen edges and into the bottom corners. The content keeps
+     its Figma coordinates. */
+  box-shadow: -5px 0 0 var(--c-white), 5px 0 0 var(--c-white), var(--shadow-panel);
   overflow: hidden;
 }
 .panel__prompt {
@@ -560,6 +566,7 @@ button.appbar__icon:focus-visible { outline: 4px solid var(--c-black); outline-o
   position: absolute; left: 5px; top: 134px; width: 710px; height: 1388px;
   background: var(--c-white);
   border-radius: 15px 15px 0 0;
+  box-shadow: -5px 0 0 var(--c-white), 5px 0 0 var(--c-white);   /* fills the side gaps, see .panel */
 }
 
 /* ---------- H2 · Transaction history ---------- */
