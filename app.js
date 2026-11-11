@@ -357,11 +357,22 @@
     if (id === "journal" && prevId !== "details") cascadeJournal(120);
     if (id !== "journal") hideLayer(filtersLayer, 0);
     if (id !== "details") { hideLayer(printLayer, 0); hideLayer(copyTicket, 0); }
+    // Daily summary always opens on the last business day that has ended, on Operations.
+    if (id === "summary") { dsDay = lastCompleteDay(new Date()); selectTab("ops", false, false); renderSummary(); cascadeRows(activePanel(), 120); }
+    if (id === "settings" && prevId !== "summary-settings") cascadeRows(views["settings"], 120, ".set-row");
+    if (id === "summary-settings") renderHours();
+    else hideLayer(timeLayer, 0);
+    if (id === "collections") enterCollections();
+    else leaveCollections();
   }
 
   var APP_ANNOUNCE = {
     "journal": "Transaction’s history",
-    "details": "Transactions’ details"
+    "details": "Transactions’ details",
+    "summary": "Daily summary",
+    "settings": "Settings",
+    "summary-settings": "Daily summary settings",
+    "collections": "File collection’s history"
   };
 
   /* Ticket overlay on the Receipt screen. Figma: Smart Animate 300 ms ease-in to open,
@@ -462,6 +473,8 @@
         " at " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds())
     });
     journalDirty = true;
+    // …and counts in the daily summary of the business day it falls in.
+    summaryTxns.push({ ts: now, kind: "debit", cents: parseInt(digits || "0", 10), tip: 0, scheme: "cb", status: "accepted" });
   }
 
   /* ---- Filters: each group holds one value or none ("ALL") ---- */
@@ -634,7 +647,9 @@
   var menuOpener = null;
   var menuBusy = false;
 
-  function sectionOf(id) { return id === "journal" || id === "details" ? "journal" : "amount-entry"; }
+  // The menu entry a screen belongs to.
+  var SECTIONS = { details: "journal", journal: "journal", summary: "summary", settings: "settings", "summary-settings": "settings", collections: "collections" };
+  function sectionOf(id) { return SECTIONS[id] || "amount-entry"; }
 
   function markMenu(target) {
     drawer.querySelectorAll("[data-target]").forEach(function (b) {
@@ -769,10 +784,616 @@
     return false;
   }
 
+  /* ------------------------------------------------------------------ *
+   * Daily summary (menu › Daily summary) and its business-day hours     *
+   * (menu › Settings › Daily summary). No Figma frames: built from the  *
+   * PayXpress manual's "Total journalier" screens.                      *
+   * ------------------------------------------------------------------ */
+
+  var dsView = views["summary"];
+  var dsSetView = views["summary-settings"];
+  var timeLayer = dsSetView.querySelector("[data-layer='time']");
+  var customSwitch = dsSetView.querySelector("[data-ds-custom]");
+  var timesBox = dsSetView.querySelector("[data-ds-times]");
+
+  // Business-day hours in minutes after midnight. With the option off a business day is
+  // the calendar day, 00:00–23:59. The custom hours are kept while it is off.
+  var DEFAULT_HOURS = { start: 0, end: 23 * 60 + 59 };
+  var dayHours = { custom: false, start: 17 * 60, end: 2 * 60 + 30 };
+
+  function hoursInUse() { return dayHours.custom ? dayHours : DEFAULT_HOURS; }
+  function overnight(h) { return h.end <= h.start; }
+  function hhmm(min) { return pad(Math.floor(min / 60)) + ":" + pad(min % 60); }
+  function midnight(d) { var m = new Date(d); m.setHours(0, 0, 0, 0); return m; }
+  function addDays(d, n) { var m = new Date(d); m.setDate(m.getDate() + n); return m; }
+  function at(day, min) { var m = new Date(day); m.setHours(0, min, 0, 0); return m; }
+
+  // The business day that opens on `day`, as [start, end). The end minute counts in full:
+  // 00:00–23:59 is the whole day, 17:00–02:30 runs to 02:30:59 the next morning.
+  function windowFor(day) {
+    var h = hoursInUse();
+    var end = h.end === h.start
+      ? at(addDays(day, 1), h.start)                                // same time: a full 24 h
+      : at(addDays(day, overnight(h) ? 1 : 0), h.end + 1);
+    return { start: at(day, h.start), end: end };
+  }
+
+  // The last business day that has ended (what the summary opens on, as in the manual).
+  function lastCompleteDay(now) {
+    var day = midnight(now);
+    while (windowFor(day).end > now) day = addDays(day, -1);
+    return day;
+  }
+
+  // Sample activity for the last five days, spread over day and night so that changing the
+  // business-day hours visibly changes what is counted. Times past 24:00 are the next morning.
+  // [time, kind, cents, tip cents, scheme, status]
+  var DAY_PATTERN = [
+    ["08:45", "debit", 1250, 0, "cb"],
+    ["11:20", "debit", 800, 100, "cb"],
+    ["12:05", "debit", 2340, 0, "mastercard"],
+    ["14:30", "debit", 1500, 0, "cb", "declined"],
+    ["17:40", "debit", 1800, 200, "cb"],
+    ["19:15", "debit", 3200, 0, "cb"],
+    ["21:50", "debit", 1450, 150, "mastercard"],
+    ["22:35", "cancellation", 1450, 0, "mastercard"],
+    ["24:40", "debit", 2200, 0, "cb"],
+    ["25:55", "debit", 900, 100, "cb"],
+    ["27:10", "credit", 500, 0, "cb"]
+  ];
+  var summaryTxns = [];
+  (function seedSummary() {
+    var now = new Date();
+    var today = midnight(now);
+    for (var d = -5; d <= 0; d++) {
+      DAY_PATTERN.forEach(function (p, i) {
+        var hm = p[0].split(":");
+        var ts = at(addDays(today, d), Number(hm[0]) * 60 + Number(hm[1]));
+        if (ts > now) return;
+        var nudge = p[1] === "debit" ? ((d + 5) * 3 + i) % 5 * 50 : 0;   // so each day's totals differ
+        summaryTxns.push({ ts: ts, kind: p[1], cents: p[2] + nudge, tip: p[3], scheme: p[4], status: p[5] || "accepted" });
+      });
+    }
+  })();
+
+  // Accepted operations in a business day, by type and by card scheme. Declined ones don't count.
+  function totalsFor(w) {
+    var t = { debitN: 0, base: 0, tipN: 0, tips: 0, cancelN: 0, cancel: 0, creditN: 0, credit: 0, schemes: {} };
+    summaryTxns.forEach(function (x) {
+      if (x.status !== "accepted" || x.ts < w.start || x.ts >= w.end) return;
+      var s = t.schemes[x.scheme] || (t.schemes[x.scheme] = { n: 0, net: 0 });
+      s.n++;
+      if (x.kind === "debit") {
+        t.debitN++; t.base += x.cents; s.net += x.cents + x.tip;
+        if (x.tip) { t.tipN++; t.tips += x.tip; }
+      } else if (x.kind === "cancellation") {
+        t.cancelN++; t.cancel += x.cents; s.net -= x.cents;
+      } else {
+        t.creditN++; t.credit += x.cents; s.net -= x.cents;
+      }
+    });
+    t.debits = t.base + t.tips;
+    t.total = t.debits - t.cancel - t.credit;
+    return t;
+  }
+
+  var SCHEMES = [
+    { id: "cb", name: "CB" },
+    { id: "mastercard", name: "Mastercard" }
+  ];
+  // "10 Nov 17:00", as the manual's "3 juil. 09h00"
+  var periodFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
+  function stamp(d) { return periodFmt.format(d) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  function minus(cents) { return "-" + euros(cents); }
+  function signed(cents) { return cents < 0 ? minus(-cents) : euros(cents); }
+  function tr(cls, label, amount) { return '<tr class="' + cls + '"><td>' + label + "</td><td>" + amount + "</td></tr>"; }
+  function table(heading, body, total) {
+    return '<table class="ds-table"><thead><tr><th scope="col">' + heading + '</th><th scope="col">Amount</th></tr></thead>' +
+      body + "<tfoot>" + tr("", "Total", total) + "</tfoot></table>";
+  }
+
+  var dsDay = null;   // midnight of the day the business day on show opens on
+
+  function renderSummary() {
+    var w = windowFor(dsDay);
+    var t = totalsFor(w);
+    dsView.querySelector("[data-ds-period]").textContent = stamp(w.start) + " → " + stamp(new Date(w.end - 60000));
+    dsView.querySelector("[data-ds-total]").textContent = fmt.format(t.total / 100) + "€";   // no space, as in the manual
+
+    dsView.querySelector("[data-ds-panel='ops']").innerHTML = table("Type (number of transactions)",
+      "<tbody>" +
+        tr("ds-main", "Accepted debits (" + t.debitN + ")", euros(t.debits)) +
+        tr("ds-sub", "Debits (" + t.debitN + ")", euros(t.base)) +
+        tr("ds-sub", "Tips (" + t.tipN + ")", euros(t.tips)) +
+      "</tbody>" +
+      "<tbody>" + tr("ds-main", "Accepted cancellations (" + t.cancelN + ")", minus(t.cancel)) + "</tbody>" +
+      "<tbody>" + tr("ds-main", "Accepted credits (" + t.creditN + ")", minus(t.credit)) + "</tbody>",
+      euros(t.total));
+
+    dsView.querySelector("[data-ds-panel='methods']").innerHTML = table("Method (number of transactions)",
+      SCHEMES.map(function (s) {
+        var v = t.schemes[s.id] || { n: 0, net: 0 };
+        return "<tbody>" + tr("ds-main", s.name + " (" + v.n + ")", signed(v.net)) + "</tbody>";
+      }).join(""),
+      signed(t.total));
+  }
+
+  function activePanel() { return dsView.querySelector("[data-ds-panel]:not([hidden])"); }
+
+  // Rows rise and fade in one after another, as in the history list.
+  function cascadeRows(container, startDelay, selector) {
+    if (reducedMotion.matches) return;
+    container.querySelectorAll(selector || "tbody tr, tfoot tr").forEach(function (el, i) {
+      el.getAnimations().forEach(function (a) { a.cancel(); });
+      el.animate(
+        [{ opacity: 0, transform: "translateY(" + CASCADE.rise + "px)" }, { opacity: 1, transform: "none" }],
+        { duration: CASCADE.duration, delay: startDelay + i * CASCADE.step, easing: EASE_OUT, fill: "backwards" }
+      );
+    });
+  }
+
+  function selectTab(tab, focus, animate) {
+    dsView.querySelectorAll(".ds-tab").forEach(function (b) {
+      var on = b.getAttribute("data-tab") === tab;
+      b.setAttribute("aria-selected", String(on));
+      b.tabIndex = on ? 0 : -1;
+      if (on && focus) b.focus({ preventScroll: true });
+    });
+    dsView.querySelectorAll("[data-ds-panel]").forEach(function (p) {
+      p.hidden = p.getAttribute("data-ds-panel") !== tab;
+    });
+    if (animate) cascadeRows(activePanel(), 0);
+  }
+
+  // Tabs follow the ARIA pattern: arrow keys move between them.
+  dsView.querySelector(".ds-tabs").addEventListener("keydown", function (e) {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
+    e.preventDefault();
+    var selected = dsView.querySelector(".ds-tab[aria-selected='true']").getAttribute("data-tab");
+    var tab = e.key === "Home" ? "ops" : e.key === "End" ? "methods" : selected === "ops" ? "methods" : "ops";
+    if (tab !== selected) selectTab(tab, true, true);
+  });
+
+  /* ---- Settings › Daily summary ---- */
+
+  function renderHours() {
+    customSwitch.checked = dayHours.custom;
+    timesBox.hidden = !dayHours.custom;
+    dsSetView.querySelector("[data-time-value='start']").textContent = hhmm(dayHours.start);
+    dsSetView.querySelector("[data-time-value='end']").textContent = hhmm(dayHours.end) + (overnight(dayHours) ? " (next day)" : "");
+  }
+
+  customSwitch.addEventListener("change", function () {
+    dayHours.custom = customSwitch.checked;
+    renderHours();
+    if (dayHours.custom && !reducedMotion.matches) {
+      timesBox.animate([{ opacity: 0, transform: "translateY(-16px)" }, { opacity: 1, transform: "none" }], { duration: 240, easing: EASE_OUT });
+    }
+    announce(dayHours.custom
+      ? "Custom hours on. " + hhmm(dayHours.start) + " to " + hhmm(dayHours.end)
+      : "Custom hours off. 00:00 to 23:59");
+  });
+
+  /* ---- Time dialog ----
+     As on the terminal: the hour field opens focused; typing replaces its value, and two
+     digits (or a first digit above 2) move on to the minute. Arrow keys and the mouse
+     wheel also step a field; Enter confirms, Esc or a tap on the dimmed screen cancels. */
+
+  var timeDraft = null;   // { which: "start" | "end", h, m }
+  var timeOpener = null;
+  var timeFields = { h: timeLayer.querySelector("[data-unit='h']"), m: timeLayer.querySelector("[data-unit='m']") };
+  var TIME_MAX = { h: 23, m: 59 };
+
+  function openTime(btn) {
+    var which = btn.getAttribute("data-which");
+    timeOpener = btn;
+    timeDraft = { which: which, h: Math.floor(dayHours[which] / 60), m: dayHours[which] % 60 };
+    var title = which === "start" ? "Start time" : "End time";
+    timeLayer.querySelector("[data-time-title]").textContent = title;
+    renderField("h");
+    renderField("m");
+    markField("h");
+    showLayer(timeLayer, 150, "[data-autofocus-time]");
+    announce(title + ", " + hhmm(dayHours[which]));
+  }
+
+  // The field being edited: outlined, and the next digit typed replaces its value.
+  function markField(unit) {
+    timeFields.h.classList.toggle("is-active", unit === "h");
+    timeFields.m.classList.toggle("is-active", unit === "m");
+    timeFields[unit]._fresh = true;
+  }
+
+  function renderField(unit) {
+    timeFields[unit].value = pad(timeDraft[unit]);
+    timeFields[unit].setAttribute("aria-valuenow", String(timeDraft[unit]));
+  }
+
+  // Takes what was typed into a field (an empty field keeps its last value).
+  function commitField(unit) {
+    var v = parseInt(timeFields[unit].value, 10);
+    if (!isNaN(v)) timeDraft[unit] = Math.min(v, TIME_MAX[unit]);
+    renderField(unit);
+  }
+
+  function stepTime(unit, dir) {
+    commitField(unit);
+    timeDraft[unit] = (timeDraft[unit] + dir + TIME_MAX[unit] + 1) % (TIME_MAX[unit] + 1);
+    renderField(unit);
+    timeFields[unit]._fresh = true;
+  }
+
+  function closeTime(apply) {
+    if (timeLayer.hidden) return;
+    if (apply) {
+      commitField("h");
+      commitField("m");
+      dayHours[timeDraft.which] = timeDraft.h * 60 + timeDraft.m;
+      renderHours();
+      announce((timeDraft.which === "start" ? "Start time " : "End time ") + hhmm(dayHours[timeDraft.which]));
+    }
+    hideLayer(timeLayer, 150, timeOpener);
+  }
+
+  Object.keys(timeFields).forEach(function (unit) {
+    var f = timeFields[unit];
+    // Caret at the start, as on the terminal; the next digit typed replaces the value.
+    f.addEventListener("focus", function () {
+      markField(unit);
+      requestAnimationFrame(function () { if (document.activeElement === f) f.setSelectionRange(0, 0); });
+    });
+    f.addEventListener("blur", function () { if (!timeLayer.hidden) commitField(unit); });
+    f.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); closeTime(true); return; }
+      var dir = { ArrowUp: 1, PageUp: 1, ArrowDown: -1, PageDown: -1 }[e.key];
+      if (dir) { e.preventDefault(); stepTime(unit, dir); return; }
+      if (!/^[0-9]$/.test(e.key) || e.ctrlKey || e.metaKey || e.altKey) return;
+      e.preventDefault();
+      var typed = (f._fresh || f.value.length >= 2 ? "" : f.value) + e.key;
+      f._fresh = false;
+      f.value = typed;
+      f.setSelectionRange(typed.length, typed.length);
+      if (unit === "h" && (typed.length === 2 || Number(typed) > 2)) { commitField("h"); markField("m"); timeFields.m.focus(); }
+      else if (unit === "m" && typed.length === 2) commitField("m");
+    });
+    // Anything else that reaches the field (paste, an on-screen keyboard) is kept to two digits.
+    f.addEventListener("input", function () {
+      var clean = f.value.replace(/\D/g, "").slice(0, 2);
+      if (clean !== f.value) f.value = clean;
+      f._fresh = false;
+    });
+  });
+
+  var wheelAcc = 0;
+  timeLayer.addEventListener("wheel", function (e) {
+    var f = e.target.closest(".tdialog__field");
+    if (!f) return;
+    e.preventDefault();
+    wheelAcc += e.deltaY;
+    while (Math.abs(wheelAcc) >= 80) {
+      var dir = wheelAcc < 0 ? 1 : -1;
+      stepTime(f.getAttribute("data-unit"), dir);
+      wheelAcc += dir * 80;
+    }
+  }, { passive: false });
+
+  // Returns true when the click belonged to the Daily summary screens.
+  function handleSummaryClick(action, el) {
+    switch (action) {
+      case "summary-tab":
+        if (el.getAttribute("aria-selected") !== "true") selectTab(el.getAttribute("data-tab"), false, true);
+        return true;
+      case "open-summary-settings":
+        go("summary-settings", EASE_IN_300);
+        dsSetView.querySelector("[data-action='back-to-settings']").focus({ preventScroll: true });
+        return true;
+      case "back-to-settings":
+        go("settings", EASE_IN_300);
+        views["settings"].querySelector("[data-action='open-summary-settings']").focus({ preventScroll: true });
+        return true;
+      case "edit-time": openTime(el); return true;
+      case "cancel-time": closeTime(false); return true;
+      case "confirm-time": closeTime(true); return true;
+    }
+    return false;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * File collection's history (menu › File collection's history)        *
+   * Figma "PayXpress Compose" › File Collection (section 5991:7592).    *
+   * ------------------------------------------------------------------ */
+
+  var collView = views["collections"];
+  var collList = collView.querySelector("[data-coll-list]");
+  var collDays = collView.querySelector("[data-coll-days]");
+  var collSkeleton = collView.querySelector("[data-coll-skeleton]");
+  var collUpload = collView.querySelector("[data-coll-upload]");
+  var collBarSpinner = collView.querySelector(".coll-spinner--bar");
+  var sendLayer = collView.querySelector("[data-layer='send']");
+  var cticket = collView.querySelector("[data-layer='cticket']");
+  var cticketBody = cticket.querySelector("[data-cticket-body]");
+  var mailLayer = collView.querySelector("[data-layer='mail']");
+  var mailDialog = mailLayer.querySelector(".cdialog");
+  var mailInput = mailLayer.querySelector("[data-mail-input]");
+
+  // Prototype timings (Figma "After delay" on each frame)
+  var COLL_T = {
+    open: 2500,      // Frame 6: placeholders, then the list
+    sending: 2500,   // Frame 8: spinner in the app bar
+    reload: 1500,    // Frame 52: placeholders again, then the list with today's reports
+    dim: 200,        // Frames 53 / 54: the dim, then the dialog or ticket
+    typing: 800,     // Frame 44: the address types itself in
+    mailSend: 1500   // Frame 46: "sending in progress", then "sent"
+  };
+
+  // Reports as in the Figma frames (11, 49, 9). "today" is 02/09/2026, the prototype's date.
+  function report(title, status, contract, ref, debits, credits, cancels, refused, ticket) {
+    return { title: title, status: status, contract: contract, ref: ref, debits: debits, credits: credits, cancels: cancels, refused: refused, ticket: ticket };
+  }
+  var COLL_DAYS = [
+    { day: "01/09/2026", reports: [
+      report("Contact v4", "issued", "3445567", "File collection n° 56 - 01/09/2026 at 21:03:32", [5, "900,38"], [2, "20,23"], [0, "0,00"], 1,
+        { app: "CB CONTACT", date: "01/09/2026", time: "21:03:32", no: "#56", file: "#000004" }),
+      report("Restaurant ticket - acct", "failed", "3190564", "File collection created - 01/09/2026 at 21:03:12", [7, "346,46"], [1, "5,04"], [0, "0,00"], 0,
+        { app: "RESTAURANT TICKET", date: "01/09/2026", time: "21:03:12", no: "created", file: "#000002" }),
+      report("Contactless v4", "issued", "3127683", "File collection n° 45 - 01/09/2026 at 21:03:01", [12, "783,97"], [0, "0,00"], [1, "9,99"], 2,
+        { app: "CB CONTACT", date: "01/09/2026", time: "21:03:01", no: "#45", file: "#000003" })
+    ] },
+    { day: "31/08/2026", reports: [
+      report("Contact v4", "issued", "3445567", "File collection n° 125 - 31/08/2026 at 21:07:29", [5, "30,00"], [2, "4,00"], [0, "0,00"], 1,
+        { app: "CB CONTACT", date: "31/08/2026", time: "21:07:29", no: "#125", file: "#000001" }),
+      report("Contactless v4", "issued", "3127683", "File collection n° 43 - 31/08/2026 at 10:23:02", [5, "548,25"], [0, "0,00"], [0, "0,00"], 3,
+        { app: "CB CONTACTLESS", date: "31/08/2026", time: "10:23:02", no: "#43", file: "#000002" })
+    ] },
+    { day: "30/08/2026", reports: [
+      report("Contactless v4", "issued", "7435567", "File collection n° 102 - 30/08/2026 at 20:59:01", [5, "1431,97"], [0, "0,00"], [0, "0,00"], 0,
+        { app: "CB CONTACTLESS", date: "30/08/2026", time: "20:59:01", no: "#102", file: "#000001" })
+    ] }
+  ];
+  // What "send" adds (Frame 9)
+  var COLL_SENT = { day: "02/09/2026", reports: [
+    report("VISA", "issued", "7435567", "File collection n° 61 - 02/09/2026 at 16:25:57", [5, "900,38"], [2, "20,23"], [0, "0,00"], 1,
+      { app: "VISA", date: "02/09/2026", time: "16:25:57", no: "#61", file: "#000006" }),
+    report("Contactless v4", "issued", "3127683", "File collection n° 54 - 02/09/2026 at 16:25:28", [12, "783,97"], [0, "0,00"], [1, "9,99"], 2,
+      { app: "CB CONTACTLESS", date: "02/09/2026", time: "16:25:28", no: "#54", file: "#000005" })
+  ] };
+  var collSent = false;
+  var collTimers = [];
+  var collOpener = null;   // the @ / print button that opened the ticket
+  var collReport = null;
+  var collCollapsed = {};
+
+  // Screen timers (loading, sending) and email-dialog timers are kept apart, so closing
+  // the email dialog never cancels a send that is still running.
+  var mailTimers = [];
+  function collLater(fn, ms, list) { (list || collTimers).push(setTimeout(fn, reducedMotion.matches ? Math.min(ms, 600) : ms)); }
+  function mailLater(fn, ms) { collLater(fn, ms, mailTimers); }
+  function clearMailTimers() { mailTimers.forEach(clearTimeout); mailTimers = []; }
+  function collClearTimers() { collTimers.forEach(clearTimeout); collTimers = []; clearMailTimers(); }
+
+  function collAllDays() { return collSent ? [COLL_SENT].concat(COLL_DAYS) : COLL_DAYS; }
+
+  function reportHtml(r, id) {
+    return (
+      '<article class="coll-item">' +
+      '<div class="coll-item__head"><h2 class="coll-item__title">' + r.title + "</h2>" +
+      '<span class="coll-chip coll-chip--' + r.status + '">' + r.status + "</span></div>" +
+      '<p class="coll-line">Contrat #' + r.contract + "</p>" +
+      '<p class="coll-line">' + r.ref + "</p>" +
+      '<p class="coll-desc">' + r.debits[0] + " debits: " + r.debits[1] + " €<br>" +
+        r.credits[0] + " credits: " + r.credits[1] + " €<br>" +
+        r.cancels[0] + " cancellations: " + r.cancels[1] + " €<br>" +
+        r.refused + " refused (TNA)</p>" +
+      '<div class="coll-item__actions">' +
+      '<button class="coll-btn" type="button" data-action="open-cticket" data-report="' + id + '" aria-label="' + r.title + ', email the report"><img src="assets/icon-email.svg" alt=""></button>' +
+      '<button class="coll-btn" type="button" data-action="open-cticket" data-report="' + id + '" aria-label="' + r.title + ', print the report"><img src="assets/icon-printer.svg" alt=""></button>' +
+      "</div></article>"
+    );
+  }
+
+  function renderCollections() {
+    collDays.innerHTML = collAllDays().map(function (d, di) {
+      var open = !collCollapsed[d.day];
+      return (
+        '<div class="day-group">' +
+        '<button class="day coll-day" type="button" data-action="toggle-coll-day" data-day="' + d.day + '" aria-expanded="' + open + '">' +
+        '<span class="day__label">' + d.day + '</span><img src="assets/icon-down.svg" alt=""></button>' +
+        '<div class="coll-rows"' + (open ? "" : " hidden") + ">" +
+        d.reports.map(function (r, ri) { return reportHtml(r, di + "-" + ri); }).join("") +
+        "</div></div>"
+      );
+    }).join("");
+  }
+
+  function findReport(id) {
+    var p = String(id).split("-");
+    var d = collAllDays()[Number(p[0])];
+    return d && d.reports[Number(p[1])];
+  }
+
+  // Placeholders over the list, then the list (Frame 6 → 1 → 11, and 52 → 9).
+  function collLoad(ms, then) {
+    collSkeleton.hidden = false;
+    collDays.style.visibility = "hidden";   // the intro stays, as in Figma
+    collLater(function () {
+      renderCollections();
+      collList.scrollTop = 0;
+      collSkeleton.hidden = true;
+      collDays.style.visibility = "";
+      if (then) then();
+    }, ms);
+  }
+
+  function enterCollections() {
+    collClearTimers();
+    collView.classList.remove("is-sending");
+    collBarSpinner.classList.remove("is-on");
+    collUpload.disabled = false;
+    collLoad(COLL_T.open, function () { announce(collAllDays().length + " days of file collection reports"); });
+  }
+
+  function leaveCollections() {
+    collClearTimers();
+    [mailLayer, cticket, sendLayer].forEach(function (l) { hideLayer(l, 0); });
+  }
+
+  // Day header: the chevron flips and the reports slide shut, or open (Frames 50 → 48 → 49, Smart Animate 300 ms ease-out).
+  function toggleCollDay(btn) {
+    var day = btn.getAttribute("data-day");
+    var rows = btn.nextElementSibling;
+    var open = !!collCollapsed[day];   // opening if it was collapsed
+    collCollapsed[day] = !open;
+    btn.setAttribute("aria-expanded", String(open));
+    rows.getAnimations().forEach(function (a) { a.cancel(); });
+    if (open) rows.hidden = false;
+    if (reducedMotion.matches) { rows.hidden = !open; return; }
+    var h = rows.scrollHeight;
+    rows.animate([{ height: (open ? 0 : h) + "px" }, { height: (open ? h : 0) + "px" }], { duration: 300, easing: EASE_OUT })
+      .finished.then(function () { if (!open) rows.hidden = true; }, function () {});
+  }
+
+  /* ---- Send the file collections now (Frames 53 → 4 → 8 → 52 → 9) ---- */
+
+  // Dim first, then the dialog or ticket fades in over it (Figma: two 200 ms dissolves).
+  function showOverDim(layer, focusSel) {
+    showLayer(layer, 0, focusSel);
+    if (reducedMotion.matches) return;
+    layer.firstElementChild.animate([{ opacity: 0 }, { opacity: 1 }], { duration: COLL_T.dim, easing: EASE_IN });
+    Array.prototype.slice.call(layer.children, 1).forEach(function (el) {
+      el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: COLL_T.dim, delay: COLL_T.dim, easing: EASE_OUT, fill: "backwards" });
+    });
+  }
+
+  function openSend() {
+    if (collView.classList.contains("is-sending")) return;
+    showOverDim(sendLayer, "[data-action='cancel-send']");
+    announce("Send file collections? This triggers sending on all your active contracts.");
+  }
+
+  function confirmSend() {
+    hideLayer(sendLayer, 300, null);
+    collView.classList.add("is-sending");
+    collBarSpinner.classList.add("is-on");
+    collUpload.disabled = true;
+    announce("Sending file collections");
+    collLater(function () {
+      collView.classList.remove("is-sending");
+      collBarSpinner.classList.remove("is-on");
+      collUpload.disabled = false;
+      collSent = true;
+      collLoad(COLL_T.reload, function () {
+        collUpload.focus({ preventScroll: true });
+        announce("File collections sent. Today's reports added.");
+      });
+    }, COLL_T.sending);
+  }
+
+  /* ---- Report ticket (Frames 54 → 55) ---- */
+
+  function line(t) { return '<p class="cticket__line">' + t + "</p>"; }
+  var GAP = '<span class="cticket__gap"></span>';
+
+  function openCticket(btn) {
+    var r = findReport(btn.getAttribute("data-report"));
+    if (!r) return;
+    collOpener = btn;
+    collReport = r;
+    var t = r.ticket;
+    cticketBody.innerHTML =
+      '<p class="cticket__title">File collection for<br>' + t.app + " application</p>" + GAP +
+      line("the " + t.date) + line("at " + t.time) + GAP +
+      line("payxpert france 69 lyon") + GAP +
+      line("001696") + line("16808") + line("54003281000041") + line("2010") + GAP +
+      line("7372") + line("10") + GAP +
+      line("001") + GAP +
+      line(t.no === "created" ? "file collection created" : "file collection " + t.no) + line("file " + t.file) + GAP +
+      line("nb transactions in eur:") + GAP +
+      line("debits: " + r.debits[0]) + GAP +
+      line("credits: " + r.credits[0]) + GAP +
+      line("cancellations: " + r.cancels[0]);
+    showOverDim(cticket, ".cticket__close");
+    announce("File collection report, " + r.title);
+  }
+
+  // Back to the button that opened the ticket, or the upload button if its day was collapsed meanwhile.
+  function collReturn() { return collOpener && collOpener.offsetParent ? collOpener : collUpload; }
+
+  function closeCticket() { hideLayer(cticket, 0, collReturn()); }   // Figma: Close, no transition
+
+  /* ---- Email the report (Frames 56 → 43 → 44 → 45 → 46 → 47) ---- */
+
+  function setMailState(state) {
+    mailDialog.setAttribute("data-mail-state", state);
+    mailLayer.querySelector("[data-mail-title]").textContent = state === "enter" ? "Please enter your email" : "File collection’s reports";
+  }
+
+  function openMail() {
+    clearMailTimers();
+    setMailState("enter");
+    mailInput.value = "";
+    mailInput._typed = false;
+    showOverDim(mailLayer, "[data-mail-input]");
+    announce("Please enter your email");
+  }
+
+  // Figma types "example@email.com" in when the field is tapped (Frame 44, 0.8 s).
+  function typeExampleMail() {
+    if (mailInput.value || mailInput._typed) return;
+    mailInput._typed = true;
+    var text = "example@email.com";
+    var step = COLL_T.typing / text.length;
+    text.split("").forEach(function (ch, i) {
+      mailLater(function () { if (mailInput.value.length === i) mailInput.value += ch; }, Math.round(step * (i + 1)));
+    });
+  }
+
+  function validateMail() {
+    if (!mailInput.value.trim()) { mailInput.focus(); typeExampleMail(); return; }
+    setMailState("sending");
+    announce("Electronic ticket sending in progress");
+    if (mailLayer.contains(document.activeElement)) document.activeElement.blur();
+    mailLater(function () {
+      setMailState("sent");
+      mailLayer.querySelector("[data-action='mail-ok']").focus({ preventScroll: true });
+    }, COLL_T.mailSend);
+  }
+
+  function closeMail(toList) {
+    clearMailTimers();
+    if (toList) {   // OK on "Ticket has been sent": back to the list (Frame 47 → 11)
+      hideLayer(mailLayer, 0);
+      hideLayer(cticket, 0, collReturn());
+    } else {
+      hideLayer(mailLayer, 0, cticket.querySelector("[data-action='open-mail']"));
+    }
+  }
+
+  mailLayer.querySelector(".cdialog__field").addEventListener("pointerdown", typeExampleMail);
+  mailInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); validateMail(); }
+  });
+
+  function handleCollectionsClick(action, el) {
+    switch (action) {
+      case "toggle-coll-day": toggleCollDay(el); return true;
+      case "open-send": openSend(); return true;
+      case "cancel-send": hideLayer(sendLayer, 0, collUpload); return true;
+      case "confirm-send": confirmSend(); return true;
+      case "open-cticket": openCticket(el); return true;
+      case "close-cticket": closeCticket(); return true;
+      case "open-mail": openMail(); return true;
+      case "dim-mail": if (mailDialog.getAttribute("data-mail-state") === "enter") closeMail(false); return true;
+      case "cancel-mail": closeMail(false); return true;
+      case "validate-mail": validateMail(); return true;
+      case "mail-ok": closeMail(true); return true;
+    }
+    return false;
+  }
+
   // The open modal layer, if any: menu, then the overlays of the current screen.
   function openModal() {
     if (!drawer.hidden) return drawer;
-    var layers = { details: [copyTicket, printLayer], journal: [filtersLayer], receipt: [ticketEl()], "receipt-old": [ticketEl()] }[current] || [];
+    var layers = { details: [copyTicket, printLayer], journal: [filtersLayer], "summary-settings": [timeLayer], collections: [mailLayer, cticket, sendLayer], receipt: [ticketEl()], "receipt-old": [ticketEl()] }[current] || [];
     for (var i = 0; i < layers.length; i++) if (!layers[i].hidden) return layers[i];
     return null;
   }
@@ -783,7 +1404,7 @@
 
     // Tab stays inside the open menu, sheet or receipt (they are aria-modal).
     if (e.key === "Tab") {
-      var items = Array.prototype.filter.call(modal.querySelectorAll("button"), function (b) { return b.offsetParent !== null; });
+      var items = Array.prototype.filter.call(modal.querySelectorAll("button:not([tabindex='-1']), input, [tabindex='0']"), function (b) { return b.offsetParent !== null; });
       if (!items.length) return;
       var first = items[0], last = items[items.length - 1];
       if (e.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) { last.focus(); e.preventDefault(); }
@@ -796,6 +1417,10 @@
     else if (modal === copyTicket) closeCopy();
     else if (modal === printLayer) hideLayer(printLayer, 150, printBtn);
     else if (modal === filtersLayer) hideLayer(filtersLayer, 300, filterBtn);
+    else if (modal === timeLayer) closeTime(false);
+    else if (modal === mailLayer) { var ms = mailDialog.getAttribute("data-mail-state"); if (ms !== "sending") closeMail(ms === "sent"); }
+    else if (modal === cticket) closeCticket();
+    else if (modal === sendLayer) hideLayer(sendLayer, 0, collUpload);
     else closeTicket(true);
   });
 
@@ -805,7 +1430,7 @@
     var swallowClick = false;
     screen.addEventListener("pointerdown", function (e) {
       if (e.pointerType !== "mouse" || e.button !== 0) return;
-      var el = e.target.closest(".hscroll, .journal-list");
+      var el = e.target.closest(".hscroll, .journal-list, .ds-panel, .coll-list");
       if (!el) return;
       var r = el.getBoundingClientRect();
       drag = {
@@ -868,6 +1493,8 @@
     var action = actionEl && actionEl.getAttribute("data-action");
 
     if (handleHistoryClick(action, actionEl, e)) return;
+    if (handleSummaryClick(action, actionEl)) return;
+    if (handleCollectionsClick(action, actionEl)) return;
 
     if (current === "present-card") {
       if (action === "cancel-transaction") { newSale(); return; }   // brief D2: cancel resets the sale

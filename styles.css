@@ -856,3 +856,337 @@ button.menu__item { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 button.menu__item:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }
 .menu__item.is-current { background: var(--c-gray-200); font-weight: 800; }
 .menu__footer { position: absolute; left: 136px; top: 1377px; width: 198px; height: 63px; opacity: 0.3; }
+
+/* =====================================================================
+   Daily summary + Settings. No Figma frames: built from the PayXpress manual
+   ("Total journalier") with this file's components. Screen coords.
+   ===================================================================== */
+
+.view--app p { margin: 0; }
+
+/* ---------- D1 · Daily summary ----------
+   Matched to the manual's "Total Journalier" screen (384 px wide → ×1.875). */
+
+/* Grey card head: period and total, centred */
+.ds-head {
+  position: absolute; left: 5px; top: 134px; width: 710px; height: 154px;
+  display: flex; flex-direction: column; align-items: center; gap: 18px; padding-top: 28px;
+  background: var(--c-gray-50);
+  border-radius: 15px 15px 0 0;
+  box-shadow: -5px 0 0 var(--c-gray-50), 5px 0 0 var(--c-gray-50);   /* fills the side gaps, see .panel */
+}
+.ds-head__line {
+  font-size: 23px; line-height: 29px; text-align: center; color: var(--c-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ds-head__line + .ds-head__line { text-transform: uppercase; }
+
+/* OPERATIONS | PAYMENT METHODS: same grey, the selected tab underlined across its half */
+.ds-tabs {
+  position: absolute; left: 0; top: 288px; width: 720px; height: 53px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--c-gray-50);
+}
+.ds-tab {
+  position: relative;
+  appearance: none; border: 0; margin: 0; padding: 0 10px; background: none;
+  font-size: 25px; line-height: 30px; text-transform: uppercase; color: var(--c-ink-muted);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.ds-tab:first-child { padding-left: 5px; }   /* centres in the card, not the screen */
+.ds-tab[aria-selected="true"]::after {
+  content: ""; position: absolute; left: 5px; right: 0; bottom: 0; height: 3px;
+  background: var(--c-ink-muted);
+}
+.ds-tab:last-child[aria-selected="true"]::after { left: 0; right: 5px; }
+.ds-tab:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }
+
+.ds-panel {
+  position: absolute; left: 0; top: 341px; width: 720px; height: 1181px;
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+}
+.ds-panel::-webkit-scrollbar { display: none; }
+.ds-panel[hidden] { display: none; }
+
+.ds-table { width: 100%; border-collapse: collapse; color: var(--c-ink-muted); font-variant-numeric: tabular-nums; }
+.ds-table th {
+  position: sticky; top: 0; z-index: 1;
+  height: 70px; padding: 0 23px 0 19px;
+  background: var(--c-gray-200);
+  font-size: 25px; line-height: 30px; font-weight: 600; text-transform: uppercase; text-align: left;
+  color: var(--c-status-muted);
+}
+.ds-table th:last-child, .ds-table td:last-child { text-align: right; white-space: nowrap; }
+.ds-table td { padding: 0 23px 0 19px; font-size: 24px; line-height: 29px; }
+.ds-table tbody, .ds-table tfoot { border-bottom: 1px solid var(--c-divider); }
+.ds-table tbody tr:first-child td, .ds-table tfoot td { padding-top: 22px; }
+.ds-table tbody tr:last-child td, .ds-table tfoot td { padding-bottom: 22px; }
+.ds-table tbody tr.ds-sub:last-child td { padding-bottom: 28px; }
+/* "• Debits (2)": lighter, a touch smaller, with a bullet */
+.ds-sub td { padding-top: 9px; font-size: 23px; color: var(--c-sub); }
+.ds-sub td:first-child { padding-left: 34px; }
+.ds-sub td:first-child::before { content: "•"; margin-right: 7px; }
+.ds-table tfoot td { font-weight: 700; text-transform: uppercase; color: var(--c-status-muted); }
+
+/* ---------- D2 · Settings ----------
+   Matched to the manual's "Paramètres" screen (395 px wide → ×1.82). */
+
+.set-card {
+  position: absolute; left: 22px; top: 134px; width: 676px; height: 1388px;
+  background: var(--c-white);
+  border-radius: 18px 18px 0 0;
+}
+.set-list { margin: 0; padding: 0; list-style: none; }
+.set-row {
+  width: 100%; height: 126px;
+  display: flex; align-items: center; gap: 30px; padding: 0 29px 0 24px;
+  appearance: none; border: 0; margin: 0;
+  border-bottom: 1px solid var(--c-divider);
+  background: none;
+  font: inherit; font-size: 24px; line-height: 29px; color: var(--c-status-muted); text-align: left;
+}
+.set-row img { flex: none; width: 28px; height: 28px; }
+.set-row__text { flex: 1; }
+.set-row img.set-row__chev { width: 32px; height: 32px; }
+button.set-row { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button.set-row:active { background: var(--c-gray-50); }
+button.set-row:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }
+
+/* ---------- D3 · Settings › Daily summary ----------
+   Matched to the manual's "Total Journalier" settings screen (378 px wide → ×1.9). */
+
+.set-page { position: absolute; left: 0; top: 134px; width: 720px; height: 1388px; background: var(--c-white); }
+.set-body { position: absolute; left: 19px; top: 134px; width: 682px; }
+.set-toggle {
+  display: flex; align-items: center; gap: 20px;
+  height: 149px; padding: 0 23px 0 0;
+  border-bottom: 1px solid var(--c-divider);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.set-toggle__text { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.set-toggle__title { font-size: 25px; line-height: 30px; color: var(--c-status-muted); }
+.set-toggle__hint { font-size: 20px; line-height: 24px; color: var(--c-hint); }
+
+/* Switch: dark track, white knob on the right when on */
+.switch {
+  appearance: none; flex: none; position: relative;
+  width: 90px; height: 50px; margin: 0;
+  border-radius: 25px; background: var(--c-ink-disabled);
+  cursor: pointer; transition: background-color 200ms var(--ease-out);
+}
+.switch::after {
+  content: ""; position: absolute; left: 6px; top: 6px;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--c-white);
+  transition: transform 200ms var(--ease-out);
+}
+.switch:checked { background: var(--c-switch-on); }
+.switch:checked::after { transform: translateX(40px); }
+.switch:focus-visible { outline: 4px solid var(--c-black); outline-offset: 4px; }
+
+.set-times[hidden] { display: none; }
+.set-time {
+  width: 100%; height: 130px;
+  display: flex; align-items: center; gap: 20px; padding: 0 27px 0 25px;
+  appearance: none; border: 0; margin: 0;
+  border-bottom: 1px solid var(--c-divider);
+  background: none; color: var(--c-status-muted); text-align: left;
+  font: inherit; font-size: 25px; line-height: 32px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.set-time:active { background: var(--c-gray-50); }
+.set-time:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }
+.set-time img { flex: none; width: 32px; height: 32px; }
+.set-time__text { flex: 1; display: flex; flex-direction: column; font-variant-numeric: tabular-nums; }
+
+/* Time dialog: centred card over a 60% black scrim that covers the whole screen.
+   The manual's screenshot has the keyboard open under it; the dialog is centred here. */
+.tdialog-layer { position: absolute; inset: 0; z-index: 30; }
+.tdialog-layer[hidden] { display: none; }
+.tdialog-layer__scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); }
+.tdialog {
+  position: absolute; left: 24px; top: 598px; width: 672px; height: 404px;
+  background: var(--c-white); border-radius: 8px;
+}
+.tdialog__field {
+  position: absolute; top: 59px; width: 164px; height: 125px;
+  margin: 0; padding: 0; border: 0; border-radius: 4px;
+  background: var(--c-field);
+  font: 400 27px/1 "Fira Mono", ui-monospace, monospace; color: var(--c-ink-muted);
+  text-align: center; caret-color: var(--c-black);
+  outline: none;
+}
+/* The field being edited (a class, not :focus, so it shows even when the window isn't focused) */
+.tdialog__field.is-active { background: var(--c-white); box-shadow: inset 0 0 0 4px var(--c-black); }
+.tdialog__field::selection { background: var(--c-field); }
+.tdialog__field--h { left: 151px; }
+.tdialog__field--m { left: 357px; }
+.tdialog__colon {
+  position: absolute; left: 315px; top: 59px; width: 42px; height: 125px;
+  display: grid; place-items: center;
+  font: 400 27px/1 "Fira Mono", ui-monospace, monospace; color: var(--c-ink-muted);
+}
+.tdialog__label { position: absolute; top: 196px; font-size: 23px; line-height: 28px; color: var(--c-ink-muted); }
+.tdialog__label--h { left: 151px; }
+.tdialog__label--m { left: 357px; }
+.tdialog__btn {
+  position: absolute; top: 295px; width: 293px; height: 84px;
+  margin: 0; padding: 0 20px; border: 0; border-radius: 16px;
+  display: grid; place-items: center;
+  font: inherit; font-size: 28px; line-height: 34px; text-transform: uppercase;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.tdialog__btn--cancel { left: 35px; background: var(--c-gray-50); box-shadow: var(--shadow-key); color: var(--c-ink-muted); }
+.tdialog__btn--cancel:active { background: var(--c-gray-200); }
+.tdialog__btn--ok { left: 344px; background: var(--c-ink-muted); color: var(--c-white); }
+.tdialog__btn--ok:active { background: var(--c-black); }
+.tdialog__btn:focus-visible { outline: 4px solid var(--c-black); outline-offset: 3px; }
+
+/* =====================================================================
+   File collection's history (Figma "PayXpress Compose" › File Collection,
+   section 5991:7592). Screen coords, 1 px = 1 Figma px.
+   ===================================================================== */
+
+/* ---------- R1 · Report list (Frame 11) ---------- */
+
+/* The white panel (Figma "Content" 5–715) behind a list that scrolls from under the app bar */
+.coll-panel { box-shadow: -5px 0 0 var(--c-white), 5px 0 0 var(--c-white), var(--shadow-key); }
+.coll-list {
+  position: absolute; left: 5px; top: 134px; width: 710px; height: 1388px;
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+}
+.coll-list::-webkit-scrollbar { display: none; }
+.coll-intro {
+  width: 700px; padding: 15px;
+  font-size: 24px; line-height: 29px; text-align: center; color: var(--c-black);
+}
+/* Day header: the History list's header; the chevron points up while the day is collapsed */
+.day.coll-day img { transition: transform 300ms var(--ease-out); }
+.day.coll-day[aria-expanded="false"] img { transform: rotate(180deg); }
+.coll-rows { overflow: hidden; }
+.coll-rows[hidden] { display: none; }
+
+.coll-item { padding: 15px 15px 0; border-bottom: 1px solid var(--c-gray-200); color: var(--c-black); }
+.coll-item__head { display: flex; align-items: center; height: 41px; }
+.coll-item__title { flex: 1; min-width: 0; margin: 0; font-size: 26px; line-height: 31px; font-weight: 700; }
+.coll-chip {
+  flex: none; padding: 5px 10px; border-radius: 4px;
+  font-size: 26px; line-height: 31px; text-transform: uppercase;
+}
+.coll-chip--issued { background: var(--c-valid-bg); }
+.coll-chip--failed { background: var(--c-cancel-bg); }
+.coll-item .coll-line { margin-top: 5px; font-size: 24px; line-height: 29px; }
+.coll-item .coll-desc { margin-top: 5px; font-size: 24px; line-height: 29px; font-style: italic; color: var(--c-ink-disabled); }
+.coll-item__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 15px 0 20px; }
+.coll-btn {
+  height: 72px; display: grid; place-items: center;
+  appearance: none; border: 0; margin: 0; padding: 0;
+  border-radius: var(--r-key); background: var(--c-gray-50); box-shadow: var(--shadow-key);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.coll-btn img { width: 32px; height: 32px; }
+.coll-btn:active { background: var(--c-gray-200); }
+.coll-btn:focus-visible { outline: 4px solid var(--c-black); outline-offset: 3px; }
+
+/* ---------- Spinners: a 270° arc, as Figma's "Loader Arc" ---------- */
+
+.coll-spinner { display: block; color: var(--c-ink-muted); animation: coll-spin 1s linear infinite; }
+@keyframes coll-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .coll-spinner { animation: none; } }
+/* In the app bar while sending (Frame 8: 43 px at 655, 65) */
+.coll-spinner--bar { position: absolute; left: 655px; top: 26px; width: 43px; height: 43px; }
+.coll-spinner--bar:not(.is-on) { display: none; }
+.is-sending [data-coll-upload] { visibility: hidden; }
+
+/* ---------- Loading (Frames 6 / 52) ---------- */
+
+.coll-skeleton { position: absolute; left: 0; top: 0; width: 720px; height: 1522px; overflow: hidden; pointer-events: none; }
+.coll-skeleton[hidden] { display: none; }
+.coll-skeleton span { position: absolute; left: 20px; width: 680px; border-radius: 15px; background: var(--c-gray-100); }
+.coll-skeleton__disc {
+  position: absolute; left: 329px; top: 256px; width: 62px; height: 62px;
+  display: grid; place-items: center; border-radius: 50%; background: var(--c-gray-200);
+}
+.coll-spinner--disc { width: 31px; height: 31px; }
+
+/* ---------- Dialogs (Frames 4, 43–47): centred, over a 30% black dim ---------- */
+
+.cdialog-layer { position: absolute; inset: 0; z-index: 12; display: grid; place-items: center; }
+.cdialog-layer[hidden] { display: none; }
+.cdialog-layer__dim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.3); }
+.cdialog {
+  position: relative; width: 608px;
+  display: flex; flex-direction: column; gap: 35px; padding: 35px;
+  background: var(--c-white); border: 1px solid var(--c-gray-200); border-radius: 20px;
+  color: var(--c-black);
+}
+.cdialog__head { display: flex; align-items: center; justify-content: space-between; }
+.cdialog .cdialog__title { margin: 0; font-size: 30px; line-height: 28px; font-weight: 800; }
+.cdialog .cdialog__text { margin: 0; font-size: 26px; line-height: 31px; }
+.coll-spinner--dialog { width: 43px; height: 43px; margin: -8px 0; }
+.cdialog:not([data-mail-state="sending"]) .coll-spinner--dialog { display: none; }
+.cdialog__actions { display: flex; justify-content: flex-end; gap: 35px; }
+.cdialog__btn {
+  appearance: none; border: 0; margin: 0; padding: 0; background: none;
+  font: inherit; font-size: 30px; line-height: 36px; font-weight: 600; text-transform: uppercase; color: var(--c-black);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.cdialog__btn--muted { color: var(--c-ink-disabled); }
+span.cdialog__btn { cursor: default; }
+.cdialog__btn:focus-visible { outline: 4px solid var(--c-black); outline-offset: 6px; border-radius: 4px; }
+/* Email field: 554 × 83, 16 px wider than the dialog's content, as in Figma */
+.cdialog__field {
+  display: flex; align-items: center; gap: 15px;
+  width: 554px; height: 83px; padding: 0 22px;
+  border: 1px solid var(--c-gray-200); border-radius: 10px;
+  cursor: text;
+}
+.cdialog__field img { flex: none; width: 35px; height: 35px; }
+.cdialog__field input {
+  flex: 1; min-width: 0; height: 40px; padding: 0; border: 0; outline: none; background: none;
+  font: inherit; font-size: 26px; line-height: 31px; color: var(--c-black);
+}
+.cdialog__field input::placeholder { color: var(--c-ink-disabled); opacity: 1; }
+.cdialog__field:focus-within { border-color: var(--c-black); }
+.cdialog[data-mail-state="enter"] [data-mail-only]:not([data-mail-only="enter"]),
+.cdialog[data-mail-state="sending"] [data-mail-only]:not([data-mail-only="sending"]),
+.cdialog[data-mail-state="sent"] [data-mail-only]:not([data-mail-only="sent"]) { display: none; }
+
+/* ---------- R2 · Report ticket (Frame 55) ---------- */
+
+.cticket { position: absolute; inset: 0; z-index: 10; }
+.cticket[hidden] { display: none; }
+.cticket__dim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.3); }
+.cticket__paper { position: absolute; left: 65px; top: 26px; width: 600px; }
+.cticket__edge { display: block; width: 600px; height: 7px; }
+.cticket__body {
+  height: 1238px; padding: 20px 10px;
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--c-white); color: var(--c-black);
+  /* Monaco in Figma (macOS only); same stand-ins as the payment receipt */
+  font-family: Monaco, Menlo, "Fira Mono", Consolas, monospace;
+  text-transform: uppercase;
+}
+.cticket .cticket__title { margin: 0; padding: 10px 0; font-size: 40px; line-height: 42px; text-align: center; }
+.cticket .cticket__line { margin: 0; font-size: 32px; line-height: 33px; white-space: nowrap; }
+.cticket__gap { display: block; flex: none; height: 20px; }
+.cticket__btn {
+  position: absolute; top: 1305px; width: 332px; height: 88px;
+  display: grid; place-items: center;
+  margin: 0; padding: 0; border: 1px solid #c2c3c4; border-radius: 20px;
+  background: var(--c-white);
+}
+.cticket__btn img { width: 40px; height: 40px; }
+.cticket__btn--email { left: 25px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.cticket__btn--email:active { background: var(--c-gray-50); }
+.cticket__btn--print { left: 373px; }
+.cticket__close {
+  position: absolute; left: 25px; top: 1413px; width: 680px; height: 88px;
+  margin: 0; padding: 0; border: 0; border-radius: 20px;
+  background: var(--c-black); color: var(--c-white);
+  font: inherit; font-size: 40px; line-height: 48px; font-weight: 600; text-transform: uppercase;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.cticket__close:active { background: var(--c-ink-muted); }
+.cticket__btn:focus-visible { outline: 4px solid var(--c-white); outline-offset: 3px; }
+.cticket__close:focus-visible { outline: 4px solid var(--c-white); outline-offset: -8px; }

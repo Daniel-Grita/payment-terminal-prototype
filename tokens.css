@@ -10,6 +10,8 @@
    Google Fonts only serves 400/700/900, so this loads the full family). */
 @font-face { font-family: "Lato"; font-weight: 400; font-style: normal; font-display: block;
   src: url("https://cdn.jsdelivr.net/npm/lato-font@3.0.0/fonts/lato-normal/lato-normal.woff2") format("woff2"); }
+@font-face { font-family: "Lato"; font-weight: 400; font-style: italic; font-display: block;
+  src: url("https://cdn.jsdelivr.net/npm/lato-font@3.0.0/fonts/lato-normal-italic/lato-normal-italic.woff2") format("woff2"); }
 @font-face { font-family: "Lato"; font-weight: 600; font-style: normal; font-display: block;
   src: url("https://cdn.jsdelivr.net/npm/lato-font@3.0.0/fonts/lato-semibold/lato-semibold.woff2") format("woff2"); }
 @font-face { font-family: "Lato"; font-weight: 700; font-style: normal; font-display: block;
@@ -33,6 +35,13 @@
   --c-gray-200: #d0d0d0;          /* status bar, divider, key pressed */
   --c-gray-300: #c7c7c7;          /* status bar on Transaction History screens */
   --c-handle: #79747e;            /* bottom-sheet drag handle */
+
+  /* ---- Colour: Settings screens (sampled from the PayXpress manual's screenshots) ---- */
+  --c-divider: #e0e0e0;           /* list dividers */
+  --c-hint: #b8b8b8;              /* "Default: from 00:00 to 23:59" */
+  --c-switch-on: #2b2b2b;         /* switch track, on */
+  --c-field: #d3d3d3;             /* time field, not focused */
+  --c-sub: #8a8a8a;               /* daily summary sub-rows ("• Debits (2)") */
 
   /* ---- Colour: action keys ---- */
   --c-cancel-bg: #f1a7a7;
