@@ -193,7 +193,7 @@ img { display: block; }
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-.key:active, .key.is-pressed { background: var(--c-gray-200); }   /* Buttons / Status=pressed */
+.key:active { background: var(--c-gray-200); }   /* Buttons / Status=pressed */
 .key:focus-visible { outline: 4px solid var(--c-black); outline-offset: 3px; }
 .key--zero { grid-column: 2; }
 .key--action { grid-row: 5; }
@@ -202,7 +202,7 @@ img { display: block; }
 .key--valid   { grid-column: 3; background: var(--c-valid-bg); }
 /* The file draws no pressed state for the coloured keys; this darkening is a
    prototype deviation so a press still registers (see report). */
-.key--action:active, .key--action.is-pressed { filter: brightness(0.9); }
+.key--action:active { filter: brightness(0.9); }
 .key--cancel img  { width: 39px; height: 38px; }
 .key--correct img { width: 44px; height: 43px; }
 .key--valid img   { width: 50px; height: 38px; }
@@ -296,12 +296,11 @@ img { display: block; }
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.cta:active, .cta.is-pressed { background: var(--c-gray-200); }
+.cta:active { background: var(--c-gray-200); }
 .cta:focus-visible { outline: 4px solid var(--c-black); outline-offset: 3px; }
 
 /* ---------- Approved ---------- */
 
-.view--approved { cursor: pointer; }
 /* "Payment animation 2.mp4" is a 1.23× capture of this screen; the banner is cropped from
    it and scaled to Figma's banner box (710 × 84 at the top of the panel). */
 .banner { position: absolute; left: 0; top: 0; width: 710px; height: 84px; }
@@ -355,7 +354,7 @@ button.receipt-option:focus-visible { outline: 4px solid var(--c-black); outline
   flex: none; width: 85px; height: 110px;
   display: grid; place-items: center;
   background: var(--c-gray-100);
-  box-shadow: inset -1px 0 0 #c7c7c7;   /* Figma: 1px right stroke, inside */
+  box-shadow: inset -1px 0 0 var(--c-gray-300);   /* Figma: 1px right stroke, inside */
 }
 .receipt-option__icon img { width: 30px; height: 30px; }
 
@@ -401,7 +400,7 @@ button.receipt-option:focus-visible { outline: 4px solid var(--c-black); outline
   position: absolute; top: 1384px; width: 332px; height: 88px;
   display: grid; place-items: center;
   background: var(--c-white);
-  border: 1px solid #c2c3c4; border-radius: 4px;
+  border: 1px solid var(--c-ticket-border); border-radius: 4px;
 }
 .ticket__btn--email { left: 20px; }
 .ticket__btn--print { left: 368px; }
@@ -409,7 +408,7 @@ button.receipt-option:focus-visible { outline: 4px solid var(--c-black); outline
 .ticket__close {
   position: absolute; left: 20px; top: 1492px; width: 680px; height: 88px;
   margin: 0; padding: 20px;
-  border: 1px solid #c2c3c4; border-radius: 4px;
+  border: 1px solid var(--c-ticket-border); border-radius: 4px;
   background: var(--c-ink-muted);
   font: inherit; font-size: 40px; font-weight: 600; line-height: 48px;
   text-transform: uppercase; color: var(--c-white);
@@ -417,3 +416,261 @@ button.receipt-option:focus-visible { outline: 4px solid var(--c-black); outline
 }
 .ticket__close:active { background: var(--c-black); }
 .ticket__close:focus-visible { outline: 4px solid var(--c-white); outline-offset: -8px; }
+
+/* =====================================================================
+   Transaction History flow (Figma "PayXpress Compose" › Transaction History)
+   Screen coords unless noted.
+   ===================================================================== */
+
+button.appbar__icon { appearance: none; border: 0; margin: 0; padding: 0; background: none; cursor: pointer; }
+button.appbar__icon:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; border-radius: 8px; }
+
+.hscroll { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior: contain; }
+.hscroll::-webkit-scrollbar { display: none; }
+.is-dragging, .is-dragging * { cursor: grabbing !important; user-select: none; }
+
+/* ---------- Shared app chrome ---------- */
+
+.view--app { background: var(--c-gray-100); }
+.statusbar--app { background: var(--c-gray-300); }
+
+.appbar-app {
+  position: absolute; left: 0; top: 39px; width: 100%; height: 95px;
+}
+.appbar-app__btn, .appbar-app__share {
+  position: absolute;
+  appearance: none; border: 0; margin: 0; padding: 0; background: none;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.appbar-app__btn--left { left: 20px; top: -2px; width: 56px; height: 100px; }
+.appbar-app__btn--left img { position: absolute; left: 0; top: 25px; width: 48px; height: 48px; }
+.appbar-app__btn--filter { left: 600px; top: -2px; width: 100px; height: 100px; }
+.appbar-app__btn--filter img { position: absolute; left: 52px; top: 25px; width: 48px; height: 48px; }
+.appbar-app__share { left: 644px; top: 17px; width: 62px; height: 62px; }
+.appbar-app__share img { width: 42px; height: 42px; margin: 10px; }
+.appbar-app__btn:focus-visible, .appbar-app__share:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; border-radius: 8px; }
+.appbar-app__title {
+  position: absolute; left: 96px; top: 30px; margin: 0;
+  font-size: 30px; line-height: 36px; font-weight: 800; color: var(--c-black);
+}
+/* Figma 5991:8424: a 28px pink disc with the active-filter count, over the icon's corner */
+.filter-badge {
+  position: absolute; left: 47px; top: 52px; width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border-radius: 50%; background: var(--c-cancel-bg);
+  font-size: 16px; line-height: 1; color: var(--c-black);
+}
+.filter-badge[hidden] { display: none; }
+
+.app-panel {
+  position: absolute; left: 5px; top: 134px; width: 710px; height: 1388px;
+  background: var(--c-white);
+  border-radius: 15px 15px 0 0;
+}
+
+/* ---------- H2 · Transaction history ---------- */
+
+.date-chips {
+  position: absolute; left: 5px; top: 134px; width: 710px; height: 104px;
+  display: flex; gap: 15px; padding: 15px;
+}
+.date-chip {
+  flex: none; height: 74px; padding: 20px;
+  border-radius: var(--r-chip);
+  background: var(--c-gray-50);
+  box-shadow: var(--shadow-key);
+  font-size: var(--fs-label); line-height: 34px;
+  text-transform: uppercase; color: var(--c-black); white-space: nowrap;
+}
+.date-chip--selected { background: var(--c-gray-100); font-weight: 800; color: var(--c-status-muted); }
+.date-chips::after { content: ""; flex: none; width: 1px; }   /* keeps the right padding when scrolled */
+
+.summary {
+  position: absolute; left: 25px; top: 243px; width: 560px;
+  display: flex; flex-direction: column; gap: 15px;
+}
+.summary__line { margin: 0; font-size: 24px; line-height: 29px; color: var(--c-black); }
+.summary__chips { display: flex; gap: 10px; }
+.summary__chips span {
+  padding: 5px 10px; border-radius: 4px; background: var(--c-gray-100);
+  font-size: 26px; line-height: 31px; text-transform: uppercase; color: var(--c-black);
+}
+.icon-btn {
+  display: grid; place-items: center;
+  width: 110px; height: 72px;
+  border-radius: var(--r-key); background: var(--c-gray-50); box-shadow: var(--shadow-key);
+}
+.icon-btn img { width: 32px; height: 32px; }
+.summary__chart { position: absolute; left: 585px; top: 272px; }
+
+.journal-list {
+  position: absolute; left: 0; top: 392px; width: 720px; height: 1130px;
+  overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.journal-list::-webkit-scrollbar { display: none; }
+.day {
+  position: sticky; top: 0; z-index: 1;
+  width: 100%; height: 62px;
+  display: flex; align-items: center; gap: 15px; padding: 15px;
+  appearance: none; border: 0; margin: 0;
+  background: var(--c-gray-200); box-shadow: var(--shadow-key);
+  font-size: 26px; line-height: 31px; font-weight: 700; text-transform: uppercase; color: var(--c-black);
+  text-align: left; cursor: pointer;
+}
+.day__label { flex: 1; }
+.day img { width: 32px; height: 32px; transition: transform 200ms var(--ease-out); }
+.day[aria-expanded="false"] img { transform: rotate(-90deg); }
+.day:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }
+.day-rows[hidden] { display: none; }
+
+.txn {
+  width: 100%; height: 99px;
+  display: flex; align-items: center; gap: 15px; padding: 15px;
+  appearance: none; border: 0; margin: 0;
+  border-bottom: 1px solid var(--c-gray-200);
+  background: var(--c-white);
+  font-size: 24px; line-height: 29px; color: var(--c-black); text-align: left;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.txn:active { background: var(--c-gray-50); }
+.txn:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }
+.txn img { flex: none; }
+.txn__time { flex: none; width: 62px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.txn__time span { align-self: flex-start; }
+.txn__sep { flex: none; width: 1px; height: 69px; margin-right: -1px; background: var(--c-gray-200); }
+.txn__info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.txn__pan, .txn__status { display: flex; align-items: center; white-space: nowrap; }
+.txn__pan { gap: 10px; }
+.txn__status { gap: 8px; height: 32px; }
+.txn__amount { flex: none; text-align: right; white-space: nowrap; }
+.journal-empty {
+  margin: 0; padding: 120px 40px; text-align: center;
+  font-size: 26px; line-height: 31px; color: var(--c-ink-muted);
+}
+
+/* ---------- Bottom sheets (Filters, Print copies) ---------- */
+
+.sheet-layer { position: absolute; inset: 0; z-index: 10; }
+.sheet-layer[hidden] { display: none; }
+.sheet-layer__backdrop { position: absolute; left: 0; top: 0; width: 100%; background: rgba(0, 0, 0, 0.25); }
+.sheet-layer--filters .sheet-layer__backdrop { height: 1595px; }
+.sheet-layer--print .sheet-layer__backdrop { height: 1522px; background: rgba(0, 0, 0, 0.32); }
+.bsheet {
+  position: absolute; left: 0; width: 720px;
+  display: flex; flex-direction: column; gap: 15px; padding: 35px;
+  background: var(--c-white);
+  border-radius: 20px 20px 0 0;
+  /* Figma: 1px #d0d0d0 stroke drawn inside, so it doesn't push the content in */
+  box-shadow: var(--shadow-key), inset 0 0 0 1px var(--c-gray-200);
+}
+.bsheet--filters { top: 240px; height: 1282px; }
+.bsheet--print { top: 1203px; height: 319px; gap: 35px; }
+.bsheet__handle { position: relative; flex: none; height: 0; }
+.bsheet__handle::before {
+  content: ""; position: absolute; left: 303px; top: -2.5px; width: 43px; height: 5px;
+  border-radius: 3px; background: var(--c-handle);
+}
+.bsheet__heading { display: flex; align-items: center; height: 48px; flex: none; }
+.bsheet__heading h2 { margin: 0; font-size: 30px; line-height: 28px; font-weight: 800; color: var(--c-black); }
+.bsheet__heading--filters { gap: 15px; }
+.bsheet__heading--filters img { width: 48px; height: 48px; }
+.bsheet__heading--print { gap: 35px; }
+.bsheet__heading--print img { width: 47px; height: 48px; }
+.bsheet__spacer { flex: none; height: 29px; }
+
+.filters__label { margin: 0; flex: none; font-size: 26px; line-height: 31px; color: var(--c-black); }
+.filters__row {
+  flex: none; display: flex; gap: 20px;
+  height: 87px; padding: 0 35px 15px 0; margin-right: -35px;
+}
+.fchip {
+  flex: none; height: 72px; padding: 0 20px;
+  display: inline-flex; align-items: center; justify-content: center;
+  appearance: none; border: 0; margin: 0;
+  border-radius: var(--r-key); background: var(--c-gray-50); box-shadow: var(--shadow-key);
+  font-size: 28px; line-height: 34px; text-transform: uppercase; color: var(--c-black); white-space: nowrap;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+/* Figma 5991:11931: a picked chip turns #e9e9e9 with ExtraBold 32px type */
+.fchip[aria-pressed="true"] { background: var(--c-gray-100); font-size: 32px; line-height: 38px; font-weight: 800; }
+.fchip--logo { width: 131px; padding: 15px 35px; }
+.fchip--logo[aria-pressed="true"] { box-shadow: var(--shadow-key), inset 0 0 0 3px var(--c-black); }
+.fchip--logo img { width: auto; height: 42px; }
+.fchip:focus-visible, .bsheet__btn:focus-visible, .print-option:focus-visible { outline: 4px solid var(--c-black); outline-offset: 3px; }
+
+.bsheet__btn {
+  flex: 1; height: 72px; padding: 20px;
+  appearance: none; border: 0; margin: 0;
+  border-radius: var(--r-key); background: var(--c-gray-50); box-shadow: var(--shadow-key);
+  font-size: 32px; line-height: 38px; font-weight: 600; text-transform: uppercase; color: var(--c-black);
+  display: grid; place-items: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.bsheet__btn:active { background: var(--c-gray-200); }
+.bsheet__btn--primary { flex: none; width: 651px; background: var(--c-black); color: var(--c-white); opacity: 0.9; }
+.bsheet__btn--primary:active { background: var(--c-ink-muted); }
+.bsheet__pair { flex: none; display: flex; gap: 20px; }
+
+.print-option {
+  flex: none; height: 48px; display: flex; align-items: center; gap: 35px;
+  appearance: none; border: 0; margin: 0; padding: 0; background: none;
+  font-size: 26px; line-height: 31px; color: var(--c-black); text-align: left;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.print-option img { width: 48px; height: 48px; }
+
+/* ---------- H3 · Transaction details ---------- */
+
+.details { display: flex; flex-direction: column; }
+.details p { margin: 0; }
+.details__card { flex: none; height: 105px; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+.details__pan { display: flex; align-items: center; gap: 15px; height: 36px; font-size: 26px; line-height: 31px; font-weight: 700; color: var(--c-black); }
+.details__row {
+  flex: none; height: 105px; padding: 15px; display: flex; flex-direction: column; gap: 15px;
+  border-bottom: 1px solid var(--c-gray-200);
+}
+.details__row--status { height: 108px; }
+.details__label { font-size: 26px; line-height: 31px; font-weight: 700; color: var(--c-black); }
+.details__value { font-size: 24px; line-height: 29px; color: var(--c-black); }
+.details__status { display: flex; align-items: center; gap: 8px; height: 32px; }
+
+/* The duplicate receipt over the details screen (Figma 5991:12779): same ticket as the
+   payment flow, set 48px higher, with a 63% backdrop that stops at the Android bar. */
+.ticket--details { bottom: 78px; background: rgba(0, 0, 0, 0.63); }
+.ticket--details .statusbar { display: none; }
+.ticket--details .ticket__paper { top: 20px; }
+.ticket--details .ticket__btn { top: 1321px; }
+.ticket--details .ticket__close { top: 1429px; }
+
+/* ---------- H1 · Side menu ---------- */
+
+.drawer { position: absolute; inset: 0; z-index: 20; }
+.drawer[hidden] { display: none; }
+.drawer__scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.25); }
+.menu {
+  position: absolute; left: 3px; top: 0; width: 470px; height: 1520px;
+  border-radius: 20px; overflow: hidden;
+  background: var(--c-gray-100);
+}
+.menu__status { height: 39px; background: var(--c-gray-200); }
+.menu__header { height: 162px; padding: 39px 0 0 28px; border-bottom: 1px solid var(--c-gray-200); }
+.menu__header img { display: block; width: 260px; height: 84px; }
+.menu__list {
+  list-style: none; margin: 0; padding: 0;
+  height: 1319px;
+  background: var(--c-white);
+}
+.menu__item {
+  width: 100%; height: 115px;
+  display: flex; align-items: center; gap: 25px; padding: 0 25px;
+  appearance: none; border: 0; margin: 0;
+  border-bottom: 1px solid var(--c-gray-200);
+  background: var(--c-white);
+  font: inherit; font-size: 26px; line-height: 31px; color: var(--c-black); text-align: left;
+}
+.menu__item img { width: 48px; height: 48px; flex: none; }
+button.menu__item { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button.menu__item:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }
+.menu__item.is-current { background: var(--c-gray-200); font-weight: 800; }
+.menu__footer { position: absolute; left: 136px; top: 1377px; width: 198px; height: 63px; opacity: 0.3; }

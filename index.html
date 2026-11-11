@@ -1,11 +1,15 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Payment Terminal · Flow 2</title>
+  <link rel="icon" href="data:,">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Lato comes from jsDelivr (tokens.css); start that connection and the first-screen weight early -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/lato-font@3.0.0/fonts/lato-normal/lato-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&family=Fira+Mono:wght@400&display=block">
   <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="styles.css">
@@ -19,13 +23,13 @@
         <div class="screen" id="screen">
 
           <!-- S1 · Amount Entry -->
-          <section class="view view--entry" data-view="amount-entry" aria-label="Saisie du montant">
+          <section class="view view--entry" data-view="amount-entry" aria-label="Amount entry">
             <div class="statusbar">
               <span class="statusbar__time">16:25</span>
               <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
             </div>
             <header class="appbar">
-              <span class="appbar__icon appbar__icon--left" aria-hidden="true"><img src="assets/icon-burger.svg" alt=""></span>
+              <button class="appbar__icon appbar__icon--left" type="button" data-action="open-menu" aria-label="Menu" aria-haspopup="dialog"><img src="assets/icon-burger.svg" alt=""></button>
               <span class="appbar__title">Originator Name</span>
               <span class="appbar__icon appbar__icon--right" aria-hidden="true"><img src="assets/icon-swap.svg" alt=""></span>
             </header>
@@ -36,13 +40,14 @@
                 <span class="chip">with tips</span>
               </div>
 
-              <div class="amount amount--entry" data-amount>
+              <!-- role=status: screen readers hear the amount as it is typed -->
+              <div class="amount amount--entry" data-amount role="status">
                 <span class="amount__pad" aria-hidden="true">€</span>
                 <span class="amount__value" data-amount-value>0,00</span>
-                <span class="amount__cur" aria-hidden="true">€</span>
+                <span class="amount__cur">€</span>
               </div>
 
-              <div class="keypad" role="group" aria-label="Clavier">
+              <div class="keypad" role="group" aria-label="Keypad">
                 <button class="key" type="button" data-key="1">1</button>
                 <button class="key" type="button" data-key="2">2</button>
                 <button class="key" type="button" data-key="3">3</button>
@@ -53,13 +58,13 @@
                 <button class="key" type="button" data-key="8">8</button>
                 <button class="key" type="button" data-key="9">9</button>
                 <button class="key key--zero" type="button" data-key="0">0</button>
-                <button class="key key--action key--cancel" type="button" data-key="clear" aria-label="Annuler le montant">
+                <button class="key key--action key--cancel" type="button" data-key="clear" aria-label="Clear amount">
                   <img src="assets/icon-cancel.svg" alt="">
                 </button>
-                <button class="key key--action key--correct" type="button" data-key="back" aria-label="Corriger">
+                <button class="key key--action key--correct" type="button" data-key="back" aria-label="Delete last digit">
                   <img src="assets/icon-correction.svg" alt="">
                 </button>
-                <button class="key key--action key--valid" type="button" data-key="ok" aria-label="Valider">
+                <button class="key key--action key--valid" type="button" data-key="ok" aria-label="Confirm amount">
                   <img src="assets/icon-validation.svg" alt="">
                 </button>
               </div>
@@ -68,7 +73,170 @@
             <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
           </section>
 
-          <!-- S2–S7 are rendered from one template in app.js -->
+          <!-- S2–S8 (payment flow) are rendered from one template in app.js -->
+
+          <!-- ================= Transaction History flow ================= -->
+
+          <!-- H2 · Transaction's history (Figma 5991:7759 / 5991:8424) -->
+          <section class="view view--app" data-view="journal" aria-label="Transaction’s history">
+            <div class="statusbar statusbar--app">
+              <span class="statusbar__time">16:25</span>
+              <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
+            </div>
+            <header class="appbar-app">
+              <button class="appbar-app__btn appbar-app__btn--left" type="button" data-action="open-menu" aria-label="Menu" aria-haspopup="dialog"><img src="assets/icon-burger-48.svg" alt=""></button>
+              <h1 class="appbar-app__title">Transaction’s History</h1>
+              <button class="appbar-app__btn appbar-app__btn--filter" type="button" data-action="open-filters" aria-label="Filters" aria-haspopup="dialog">
+                <img src="assets/menu-settings.svg" alt="">
+                <span class="filter-badge" data-filter-badge hidden></span>
+              </button>
+            </header>
+
+            <div class="app-panel"></div>
+
+            <!-- Date range chips: scroll sideways, shown as designed (not wired in Figma) -->
+            <div class="date-chips hscroll" aria-hidden="true">
+              <span class="date-chip date-chip--selected">today</span>
+              <span class="date-chip">7 last days</span>
+              <span class="date-chip">30 last days</span>
+              <span class="date-chip">current month</span>
+              <span class="date-chip">custom</span>
+            </div>
+
+            <div class="summary">
+              <p class="summary__line">16 jan 2025 16:00 → 18 jan 2025 08:00</p>
+              <div class="summary__chips"><span>debit</span><span>cb ctls merch...</span></div>
+              <p class="summary__line" lang="fr">TOTAL DES TRANSACTIONS: 1600,50 €</p>
+            </div>
+            <span class="icon-btn summary__chart" aria-hidden="true"><img src="assets/icon-chart.svg" alt=""></span>
+
+            <div class="journal-list" data-journal-list></div>
+
+            <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
+
+            <!-- Filters bottom sheet (Figma 5991:10674 → 5991:11931) -->
+            <div class="sheet-layer sheet-layer--filters" data-layer="filters" hidden>
+              <div class="sheet-layer__backdrop" data-action="cancel-filters"></div>
+              <div class="bsheet bsheet--filters" role="dialog" aria-modal="true" aria-labelledby="filtersTitle">
+                <span class="bsheet__handle" aria-hidden="true"></span>
+                <div class="bsheet__heading bsheet__heading--filters">
+                  <img src="assets/menu-settings.svg" alt="">
+                  <h2 id="filtersTitle">Filters</h2>
+                </div>
+                <span class="bsheet__spacer" aria-hidden="true"></span>
+                <p class="filters__label" id="fl-search">Search by</p>
+                <div class="filters__row hscroll" role="group" aria-labelledby="fl-search">
+                  <button class="fchip" type="button" data-group="search" data-value="card">card number</button>
+                  <button class="fchip" type="button" data-group="search" data-value="amount">amount</button>
+                </div>
+                <p class="filters__label" id="fl-type">Transaction type</p>
+                <div class="filters__row hscroll" role="group" aria-labelledby="fl-type">
+                  <button class="fchip" type="button" data-group="type" data-value="">all</button>
+                  <button class="fchip" type="button" data-group="type" data-value="debit">débit</button>
+                  <button class="fchip" type="button" data-group="type" data-value="credit">credit</button>
+                  <button class="fchip" type="button" data-group="type" data-value="cancellation">cancellation</button>
+                </div>
+                <p class="filters__label" id="fl-status">Transaction status</p>
+                <div class="filters__row hscroll" role="group" aria-labelledby="fl-status">
+                  <button class="fchip" type="button" data-group="status" data-value="">all</button>
+                  <button class="fchip" type="button" data-group="status" data-value="accepted">accepter</button>
+                  <button class="fchip" type="button" data-group="status" data-value="declined">declined</button>
+                </div>
+                <p class="filters__label" id="fl-merchant">Merchant account</p>
+                <div class="filters__row hscroll" role="group" aria-labelledby="fl-merchant">
+                  <button class="fchip" type="button" data-group="merchant" data-value="">all</button>
+                  <button class="fchip" type="button" data-group="merchant" data-value="payxpert2">bouchonné payxpert2 cont...</button>
+                </div>
+                <p class="filters__label" id="fl-scheme">Processing schemes</p>
+                <div class="filters__row hscroll" role="group" aria-labelledby="fl-scheme">
+                  <button class="fchip" type="button" data-group="scheme" data-value="">all</button>
+                  <button class="fchip fchip--logo" type="button" data-group="scheme" data-value="cb-1" aria-label="CB"><img src="assets/cb-small.svg" alt="" width="61" height="42"></button>
+                  <button class="fchip fchip--logo" type="button" data-group="scheme" data-value="mastercard" aria-label="Mastercard"><img src="assets/scheme-mastercard.svg" alt="" width="57" height="40"></button>
+                  <button class="fchip fchip--logo" type="button" data-group="scheme" data-value="cb-2" aria-label="CB"><img src="assets/cb-small.svg" alt="" width="61" height="42"></button>
+                  <button class="fchip fchip--logo" type="button" data-group="scheme" data-value="cb-3" aria-label="CB"><img src="assets/cb-small.svg" alt="" width="61" height="42"></button>
+                </div>
+                <p class="filters__label" id="fl-collection">Remote collection status</p>
+                <div class="filters__row hscroll" role="group" aria-labelledby="fl-collection">
+                  <button class="fchip" type="button" data-group="collection" data-value="">all</button>
+                  <button class="fchip" type="button" data-group="collection" data-value="collected">collected</button>
+                  <button class="fchip" type="button" data-group="collection" data-value="not-collected">not collected</button>
+                </div>
+                <span class="bsheet__spacer" aria-hidden="true"></span>
+                <button class="bsheet__btn bsheet__btn--primary" type="button" data-action="apply-filters">apply filters</button>
+                <div class="bsheet__pair">
+                  <button class="bsheet__btn" type="button" data-action="cancel-filters">cancel</button>
+                  <button class="bsheet__btn" type="button" data-action="reset-filters">reset</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- H3 · Transaction's details (Figma 6006:7326) -->
+          <section class="view view--app" data-view="details" aria-label="Transactions’ details">
+            <div class="statusbar statusbar--app">
+              <span class="statusbar__time">16:25</span>
+              <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
+            </div>
+            <header class="appbar-app">
+              <button class="appbar-app__btn appbar-app__btn--left" type="button" data-action="back-to-journal" aria-label="Back"><img src="assets/icon-back.svg" alt=""></button>
+              <h1 class="appbar-app__title">Transactions’ Details</h1>
+              <button class="appbar-app__share" type="button" data-action="open-print" aria-label="Print a duplicate" aria-haspopup="dialog"><img src="assets/icon-share.svg" alt=""></button>
+            </header>
+
+            <div class="app-panel details">
+              <div class="details__card">
+                <p class="details__pan">∗∗∗∗ 6666<img src="assets/cb-small.svg" alt="CB" width="52" height="36"></p>
+                <p class="details__value"><span data-detail="amount">15,00</span> €</p>
+              </div>
+              <div class="details__row"><p class="details__label">Operation date</p><p class="details__value" data-detail="date">10/11/2025 at 17:12:04</p></div>
+              <div class="details__row details__row--status"><p class="details__label">Status</p><p class="details__value details__status"><img data-detail="status-icon" src="assets/status-accepted.svg" alt="" width="32" height="32"><span data-detail="status">Debit accepted</span></p></div>
+              <div class="details__row"><p class="details__label">Authorization number</p><p class="details__value">Bank authorization not requested</p></div>
+              <div class="details__row"><p class="details__label">File collection date</p><p class="details__value">14/11/2025 at 11:53:22</p></div>
+              <div class="details__row"><p class="details__label">Reference of the file collection</p><p class="details__value">583924</p></div>
+              <div class="details__row"><p class="details__label">Merchant account</p><p class="details__value">CB Contact - Elitt - Contrat Payxpert</p></div>
+              <div class="details__row"><p class="details__label">POS</p><p class="details__value">PA12P58T0059</p></div>
+              <div class="details__row"><p class="details__label">PayXpert ID</p><p class="details__value">b4985jfd-sj56-345p-sd34-2057295083f55</p></div>
+            </div>
+
+            <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
+
+            <!-- Print copies bottom sheet (Figma 6006:52066) -->
+            <div class="sheet-layer sheet-layer--print" data-layer="print" hidden>
+              <div class="sheet-layer__backdrop" data-action="close-print"></div>
+              <div class="bsheet bsheet--print" role="dialog" aria-modal="true" aria-labelledby="printTitle">
+                <span class="bsheet__handle" aria-hidden="true"></span>
+                <div class="bsheet__heading bsheet__heading--print">
+                  <img src="assets/icon-printer-48.svg" alt="">
+                  <h2 id="printTitle">Editing a duplicate</h2>
+                </div>
+                <button class="print-option" type="button" data-action="open-copy" data-copy="customer"><img src="assets/icon-customer.svg" alt=""><span>Customer copy</span></button>
+                <button class="print-option" type="button" data-action="open-copy" data-copy="merchant"><img src="assets/icon-merchant.svg" alt=""><span>Merchant copy</span></button>
+              </div>
+            </div>
+            <!-- The duplicate ticket (Figma 5991:12779) is added by app.js -->
+          </section>
+
+          <!-- H1 · Side menu (Figma B.Menu 5991:10440 / 5991:10458), opened from ☰ -->
+          <div class="drawer" id="drawer" hidden>
+            <div class="drawer__scrim" data-action="close-menu"></div>
+            <div class="menu" role="dialog" aria-modal="true" aria-label="Menu">
+              <div class="menu__status" aria-hidden="true"></div>
+              <div class="menu__header"><img src="assets/menu-logo.svg" alt="payXpert" width="260" height="84"></div>
+              <nav aria-label="Main">
+              <ul class="menu__list">
+                <li><button class="menu__item" type="button" data-action="menu-go" data-target="amount-entry"><img src="assets/menu-charge.svg" alt=""><span>Charge</span></button></li>
+                <li><button class="menu__item" type="button" data-action="menu-go" data-target="journal"><img src="assets/menu-history.svg" alt=""><span>Transaction’s history</span></button></li>
+                <!-- Shown as designed; not wired in Figma -->
+                <li><span class="menu__item"><img src="assets/menu-summary.svg" alt=""><span>Daily summary</span></span></li>
+                <li><span class="menu__item"><img src="assets/menu-files.svg" alt=""><span>File collection’s history</span></span></li>
+                <li><span class="menu__item"><img src="assets/menu-settings.svg" alt=""><span>Settings</span></span></li>
+                <li><span class="menu__item"><img src="assets/menu-support.svg" alt=""><span>Support</span></span></li>
+                <li><span class="menu__item"><img src="assets/menu-about.svg" alt=""><span>About</span></span></li>
+              </ul>
+              </nav>
+              <img class="menu__footer" src="assets/menu-footer.svg" alt="payxpress by payXpert" width="198" height="63">
+            </div>
+          </div>
 
         </div>
         <div class="device__notch" aria-hidden="true"></div>
