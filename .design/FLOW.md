@@ -31,6 +31,18 @@ The white keypad sheet, transaction panel and history panel reach the screen's s
 (Figma insets them 5 px). The grey gaps read as light lines against the black bezel,
 running into the rounded bottom corners. Content keeps Figma's coordinates.
 
+## Update 2026-11-11 — Old UI (stage menu › Interface › Old)
+
+The previous software, for comparison. Built from two screenshots (no Figma frames);
+positions measured at ×2.25. Only the end of a payment differs:
+
+```
+S6 authorization ─ 2.0 s ─▶ O7 approved-old  "Débit · CB · amount · PAIEMENT SANS CONTACT ACCEPTE"
+O7 ─ 2.0 s, dissolve 300 ─▶ O8 receipt-old   result card (date = time of approval) · "Ticket commerçant ?"
+O8 ─ eye ─▶ ticket overlay, MERCHANT RECEIPT ─ CLOSE ─▶ O8
+   └─ FERMER ─▶ S1 (new sale)        @ and print: inert
+```
+
 ## Update 2026-11-11 — Transaction History flow
 
 Figma file `SgRqzQkSTAUxX8HAyYqgrp`, section `5991:6705` "Transaction History" (flow start

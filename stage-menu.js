@@ -1,7 +1,8 @@
 /*
  * Stage menu — prototype chrome for screen recording, not part of the terminal design.
- * A ☰ button in the window's top-left corner opens a small panel: the page background behind
- * the terminal, and the terminal's drop shadow. Choices are remembered in this browser.
+ * A ☰ button in the window's top-left corner opens a small panel: which software interface
+ * the terminal shows (new or old), the page background behind the terminal, and the
+ * terminal's drop shadow. Choices are remembered in this browser.
  *
  * So it stays out of recordings, the button fades away after a few seconds and comes back
  * when the pointer moves into the top-left corner or the button gets keyboard focus.
@@ -12,6 +13,7 @@
   var DEFAULT_BG = "#e6e6e8";
   var STORE_KEY = "payment-terminal:stage-bg";
   var SHADOW_KEY = "payment-terminal:device-shadow";
+  var UI_KEY = "payment-terminal:ui";
   var CORNER = 160;          // px from the top-left corner that wakes the button
   var FIRST_HIDE = 3000;     // ms the button stays visible after the page opens
 
@@ -66,6 +68,26 @@
   var saved = null;
   try { saved = normalise(localStorage.getItem(STORE_KEY)); } catch (e) { /* storage blocked */ }
   setBackground(saved || DEFAULT_BG);
+
+  /* ---------- Interface: new or old software ---------- */
+  // app.js reads <html data-ui> when the payment reaches Approved, so a switch takes effect
+  // from the next approval; a screen already on show stays as it is.
+
+  var uiRadios = panel.querySelectorAll('input[name="stage-ui"]');
+
+  function setUi(ui) {
+    document.documentElement.setAttribute("data-ui", ui);
+    for (var i = 0; i < uiRadios.length; i++) uiRadios[i].checked = uiRadios[i].value === ui;
+    try { localStorage.setItem(UI_KEY, ui); } catch (e) { /* not remembered */ }
+  }
+
+  panel.addEventListener("change", function (e) {
+    if (e.target.name === "stage-ui") setUi(e.target.value);
+  });
+
+  var savedUi = null;
+  try { savedUi = localStorage.getItem(UI_KEY); } catch (e) { /* storage blocked */ }
+  setUi(savedUi === "old" ? "old" : "new");
 
   /* ---------- Terminal drop shadow ---------- */
 

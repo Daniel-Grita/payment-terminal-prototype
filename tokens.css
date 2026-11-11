@@ -41,6 +41,10 @@
   --c-valid-ink: #4b5934;         /* icon at 60%, LED stroke, approved text */
   --c-danger: #ec0000;            /* CANCEL TRANSACTION label */
 
+  /* ---- Colour: Old UI (sampled from screenshots of the previous software) ---- */
+  --c-old-green: #6f9a2b;         /* DÉBIT, PAIEMENT ACCEPTE, check, print button */
+  --c-old-line: #d4d4d4;          /* result card border and divider */
+
   /* ---- Type ---- */
   --font-ui: "Lato", system-ui, sans-serif;
   --font-status: "Roboto", system-ui, sans-serif;

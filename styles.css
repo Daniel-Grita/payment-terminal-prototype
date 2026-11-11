@@ -89,6 +89,19 @@ img { display: block; }
 .stage-menu__picker:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
 
 .stage-menu__group + .stage-menu__group { margin-top: 20px; }
+.segmented {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+  padding: 2px; border-radius: 10px; background: #ececee;
+}
+.segmented__option { position: relative; cursor: pointer; }
+.segmented__option input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.segmented__option span {
+  display: block; padding: 7px 0; border-radius: 8px;
+  font-size: 14px; font-weight: 600; text-align: center; color: #6b6b70;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+.segmented__option input:checked + span { background: #fff; color: #1c1c1e; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14); }
+.segmented__option input:focus-visible + span { outline: 2px solid #0a84ff; outline-offset: 1px; }
 .stage-menu__switch {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   font-size: 15px; font-weight: 600; cursor: pointer;
@@ -516,6 +529,74 @@ button.receipt-option:focus-visible { outline: 4px solid var(--c-black); outline
 }
 .ticket__close:active { background: var(--c-ink-muted); }
 .ticket__close:focus-visible { outline: 4px solid var(--c-white); outline-offset: -8px; }
+
+/* =====================================================================
+   Old UI (stage menu › Interface › Old): the previous software's Approved and
+   receipt screens. No Figma frames: measured off screenshots (320 px wide → ×2.25).
+   ===================================================================== */
+
+.view--old { background: var(--c-white); color: var(--c-ink-muted); text-align: center; }
+.view--old p { margin: 0; }
+.old-statusbar { background: #dadada; }
+.old-title {
+  position: absolute; left: 0; top: 39px; width: 100%; height: 82px;
+  padding-left: 20px;
+  display: flex; align-items: center;
+  background: var(--c-gray-100);
+  font-size: 36px; color: var(--c-ink-muted);
+}
+.old-band {
+  position: absolute; left: 0; top: 124px; width: 100%; height: 36px;
+  background: var(--c-gray-100);
+}
+.old-scheme-label { position: absolute; left: 0; width: 100%; font-size: 36px; line-height: 42px; text-transform: uppercase; color: var(--c-old-green); }
+.old-amount { position: absolute; left: 0; width: 100%; white-space: nowrap; }
+
+/* Approved: "Débit · CB · amount · Paiement sans contact accepte" */
+.old-debit--top { top: 199px; }
+.old-cb { position: absolute; left: 0; top: 253px; width: 100%; font-size: 32px; line-height: 38px; }
+.old-amount--approved { top: 315px; font-size: 120px; line-height: 140px; }
+.old-message { position: absolute; left: 0; top: 555px; width: 100%; font-size: 46px; line-height: 60px; text-transform: uppercase; }
+
+/* Receipt: card with the result, "Ticket commerçant ?" and its four buttons */
+.old-card {
+  position: absolute; left: 18px; top: 171px; width: 684px; height: 436px;
+  border: 2px solid var(--c-old-line);
+}
+.old-card__head {
+  height: 84px; line-height: 84px;
+  border-bottom: 2px solid var(--c-old-line);
+  font-size: 28px; font-weight: 600; text-transform: uppercase; color: var(--c-old-green);
+}
+.old-card__date { position: absolute; left: 0; top: 96px; width: 100%; font-size: 28px; line-height: 34px; text-transform: uppercase; }
+.old-card__cb { position: absolute; left: 295px; top: 160px; width: 90px; height: 62px; }
+.old-card__debit { top: 243px; }
+.old-amount--card { top: 311px; font-size: 100px; line-height: 116px; }
+.old-card__check { position: absolute; left: 610px; top: 360px; width: 50px; height: 50px; }
+.old-card__check circle { fill: var(--c-old-green); }
+.old-card__check path { fill: none; stroke: var(--c-white); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.old-question { position: absolute; left: 0; top: 729px; width: 100%; font-size: 42px; line-height: 50px; }
+
+.old-btn {
+  position: absolute; height: 90px; margin: 0; padding: 0;
+  display: grid; place-items: center;
+  border: 2px solid #9a9a9a; border-radius: 4px;
+  background: var(--c-white);
+  font: inherit; color: inherit;
+}
+button.old-btn { cursor: pointer; }
+.old-btn img { width: 44px; height: 44px; }
+.old-btn--view  { left: 20px;  top: 943px; width: 330px; }
+.old-btn--email { left: 370px; top: 943px; width: 330px; }
+.old-btn--print { left: 18px; top: 1058px; width: 684px; border: 0; border-radius: 0; background: var(--c-old-green); }
+.old-btn--print img { filter: brightness(0) invert(1); }
+.old-btn--close {
+  left: 18px; top: 1168px; width: 684px; height: 88px;
+  border: 3px solid var(--c-ink-muted);
+  font-size: 34px; text-transform: uppercase; color: var(--c-status-muted);
+}
+button.old-btn:active { background: var(--c-gray-100); }
+button.old-btn:focus-visible { outline: 4px solid var(--c-black); outline-offset: 4px; }
 
 /* =====================================================================
    Transaction History flow (Figma "PayXpress Compose" › Transaction History)

@@ -26,7 +26,19 @@
     "card-read":     { hold: 1000, next: "please-wait-2", transition: INSTANT },
     "please-wait-2": { hold: 800,  next: "authorization", transition: INSTANT },
     "authorization": { hold: 2000, next: "approved",      transition: INSTANT },
-    "approved":      { hold: 2000, next: "receipt",       transition: DISSOLVE_300 }
+    "approved":      { hold: 2000, next: "receipt",       transition: DISSOLVE_300 },
+    "approved-old":  { hold: 2000, next: "receipt",       transition: DISSOLVE_300 }
+  };
+
+  // The stage menu's Interface switch sets <html data-ui="old">; then the end of the payment
+  // shows the old software's screens instead of the new ones.
+  var OLD_UI_SCREENS = { "approved": "approved-old", "receipt": "receipt-old" };
+  function resolveScreen(id) {
+    return document.documentElement.getAttribute("data-ui") === "old" && OLD_UI_SCREENS[id] || id;
+  }
+  var OLD_ANNOUNCE = {
+    "approved-old": "Débit, CB. Paiement sans contact accepté",
+    "receipt-old": "Paiement accepté. Ticket commerçant ?"
   };
 
   // What each transaction screen shows (Figma frames 5735:43828 … 5987:6264).
@@ -145,14 +157,16 @@
   // receipt. Lines are live text so AMOUNT shows the amount actually entered.
   // With `details` it is the duplicate printed from Transaction's details (Figma 5991:12779):
   // same ticket, its amount taken from the chosen transaction, not the amount being entered.
-  function ticketTemplate(details) {
+  // `copy` ("customer" by default) picks which receipt it is; the Old UI shows the merchant's.
+  function ticketTemplate(details, copy) {
     var line = function (t) { return '<p class="ticket__line">' + t + "</p>"; };
     var space = '<span class="ticket__space"></span>';
     var big = '<span class="ticket__space ticket__space--big"></span>';
     var amountAttr = details ? "data-detail-amount" : "data-amount-value";
-    var copy = details ? '<span data-ticket-copy>customer</span>' : "customer";
+    var label = copy === "merchant" ? "Merchant receipt" : "Customer receipt";
+    copy = details ? '<span data-ticket-copy>customer</span>' : copy || "customer";
     return (
-      '<div class="ticket' + (details ? " ticket--details" : "") + '" role="dialog" aria-modal="true" aria-label="Customer receipt" hidden>' +
+      '<div class="ticket' + (details ? " ticket--details" : "") + '" role="dialog" aria-modal="true" aria-label="' + label + '" hidden>' +
       '  <div class="statusbar statusbar--muted">' +
       '    <span class="statusbar__time">16:25</span>' +
       '    <img class="statusbar__icons" src="assets/status-icons-muted.svg" alt="">' +
@@ -183,6 +197,50 @@
   Object.keys(TXN_SCREENS).forEach(function (id) {
     screen.insertAdjacentHTML("beforeend", txnTemplate(id, TXN_SCREENS[id]));
   });
+
+  /* ---- Old UI: the previous software's two end-of-payment screens ----
+     Chosen in the stage menu (Interface › Old). Everything up to Authorization is shared;
+     "approved" and "receipt" are swapped for these. Built from screenshots of the old
+     software (no Figma frames), so positions are measured off the images. */
+  function oldHeader() {
+    return (
+      '<div class="statusbar old-statusbar">' +
+      '  <span class="statusbar__time">16:25</span>' +
+      '  <img class="statusbar__icons" src="assets/status-icons.svg" alt="">' +
+      "</div>" +
+      '<div class="old-title">Transaction terminée</div>' +
+      '<div class="old-band"></div>'
+    );
+  }
+  function oldAmount(cls) {
+    return '<p class="old-amount ' + cls + '" data-amount><span data-amount-value>0,00</span> €</p>';
+  }
+  screen.insertAdjacentHTML("beforeend",
+    '<section class="view view--old" data-view="approved-old" lang="fr">' +
+      oldHeader() +
+      '<p class="old-scheme-label old-debit--top">Débit</p>' +
+      '<p class="old-cb">CB</p>' +
+      oldAmount("old-amount--approved") +
+      '<p class="old-message">Paiement sans contact<br>accepte</p>' +
+    "</section>" +
+    '<section class="view view--old" data-view="receipt-old" lang="fr">' +
+      oldHeader() +
+      '<div class="old-card">' +
+      '  <p class="old-card__head">Paiement accepte</p>' +
+      '  <p class="old-card__date" data-old-date>Le 05/08/26 a 12:13:44</p>' +
+      '  <img class="old-card__cb" src="assets/cb-logo@2x.webp" alt="CB">' +
+      '  <p class="old-scheme-label old-card__debit">Débit</p>' +
+         oldAmount("old-amount--card") +
+      '  <svg class="old-card__check" viewBox="0 0 50 50" aria-hidden="true"><circle cx="25" cy="25" r="25"/><path d="M14 25.5l7.5 7.5L36.5 18"/></svg>' +
+      "</div>" +
+      '<p class="old-question">Ticket commerçant ?</p>' +
+      '<button class="old-btn old-btn--view" type="button" data-action="open-ticket" data-autofocus aria-label="Voir le ticket"><img src="assets/icon-view.svg" alt=""></button>' +
+      '<div class="old-btn old-btn--email" aria-hidden="true"><img src="assets/icon-email.svg" alt=""></div>' +
+      '<div class="old-btn old-btn--print" aria-hidden="true"><img src="assets/icon-printer.svg" alt=""></div>' +
+      '<button class="old-btn old-btn--close" type="button" data-action="skip">Fermer</button>' +
+      ticketTemplate(false, "merchant") +
+    "</section>"
+  );
   screen.querySelectorAll("[data-view]").forEach(function (el) {
     views[el.getAttribute("data-view")] = el;
   });
@@ -256,6 +314,7 @@
   }
 
   function go(id, transition) {
+    id = resolveScreen(id);
     var prevId = current;
     var from = current ? views[current] : null;
     var to = views[id];
@@ -278,7 +337,7 @@
     }
 
     var cfg = TXN_SCREENS[id];
-    announce(cfg ? cfg.announce : APP_ANNOUNCE[id] || "Enter the amount. " + amountText() + " euros");
+    announce(cfg ? cfg.announce : APP_ANNOUNCE[id] || OLD_ANNOUNCE[id] || "Enter the amount. " + amountText() + " euros");
 
     // Keyboard focus would otherwise stay on a control of the screen that just left.
     if (!to.contains(document.activeElement)) {
@@ -291,7 +350,8 @@
     if (step) holdTimer = setTimeout(function () { go(step.next, step.transition); }, step.hold);
 
     if (id === "approved") { replayBanner(to); recordSale(); }
-    if (id !== "receipt") closeTicket(false);
+    if (id === "approved-old") { recordSale(); stampOldDate(); }
+    if (id !== "receipt" && id !== "receipt-old") closeTicket(false);
     if (id === "journal" && journalDirty) renderJournal();
     // Coming back from a transaction's details keeps the list still; any other arrival cascades it in.
     if (id === "journal" && prevId !== "details") cascadeJournal(120);
@@ -306,21 +366,34 @@
 
   /* Ticket overlay on the Receipt screen. Figma: Smart Animate 300 ms ease-in to open,
      "Back" with no transition to close. */
-  function ticketEl() { return views["receipt"].querySelector(".ticket"); }
+  // The receipt screen on show: the new one, or the Old UI's.
+  function receiptView() { return views[current === "receipt-old" ? "receipt-old" : "receipt"]; }
+  function ticketEl() { return receiptView().querySelector(".ticket"); }
 
   function openTicket() {
     var t = ticketEl();
     t.hidden = false;
     if (!reducedMotion.matches) t.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: EASE_IN });
     t.querySelector("[data-action='close-ticket']").focus({ preventScroll: true });
-    announce("Customer receipt");
+    announce(t.getAttribute("aria-label"));
   }
 
   function closeTicket(restoreFocus) {
-    var t = ticketEl();
-    if (t.hidden) return;
-    t.hidden = true;
-    if (restoreFocus) views["receipt"].querySelector("[data-action='open-ticket']").focus({ preventScroll: true });
+    ["receipt", "receipt-old"].forEach(function (id) {
+      var t = views[id].querySelector(".ticket");
+      if (t.hidden) return;
+      t.hidden = true;
+      if (restoreFocus) views[id].querySelector("[data-action='open-ticket']").focus({ preventScroll: true });
+    });
+  }
+
+  // The Old UI's receipt card shows when the sale was approved: "Le 11/11/26 a 14:05:09".
+  function stampOldDate() {
+    var d = new Date();
+    var p = function (n) { return (n < 10 ? "0" : "") + n; };
+    views["receipt-old"].querySelector("[data-old-date]").textContent =
+      "Le " + p(d.getDate()) + "/" + p(d.getMonth() + 1) + "/" + String(d.getFullYear()).slice(2) +
+      " a " + p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
   }
 
   // A GIF that plays once only restarts when it gets a new URL, so each visit to Approved
@@ -699,7 +772,7 @@
   // The open modal layer, if any: menu, then the overlays of the current screen.
   function openModal() {
     if (!drawer.hidden) return drawer;
-    var layers = { details: [copyTicket, printLayer], journal: [filtersLayer], receipt: [ticketEl()] }[current] || [];
+    var layers = { details: [copyTicket, printLayer], journal: [filtersLayer], receipt: [ticketEl()], "receipt-old": [ticketEl()] }[current] || [];
     for (var i = 0; i < layers.length; i++) if (!layers[i].hidden) return layers[i];
     return null;
   }
@@ -803,7 +876,7 @@
       return;
     }
 
-    if (current === "receipt") {
+    if (current === "receipt" || current === "receipt-old") {
       if (action === "open-ticket") openTicket();
       else if (action === "close-ticket") closeTicket(true);
       else if (action === "skip") newSale();

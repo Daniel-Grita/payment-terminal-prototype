@@ -54,6 +54,12 @@ their amount and time.
 ### Stage menu (for recording)
 
 The ☰ in the window's top-left corner (outside the terminal) opens the stage settings.
+**Interface** switches between the **New** software (the Figma flow above) and the
+**Old** one. Old only changes the end of a payment: after Authorization it shows the old
+"Paiement sans contact accepte" screen, then "Ticket commerçant ?" (the eye opens the
+merchant receipt, **Fermer** starts a new sale; @ and print are inert). It applies from the
+next approval.
+
 **Background** has eight presets (including green and blue screen for keying) and a
 custom colour picker or hex field; **Drop shadow** turns the terminal's shadow on or off.
 Both choices are remembered in this browser. The button fades out 3 s after the page opens so it stays out of recordings;
