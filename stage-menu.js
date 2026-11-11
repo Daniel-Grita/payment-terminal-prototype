@@ -1,8 +1,9 @@
 /*
  * Stage menu — prototype chrome for screen recording, not part of the terminal design.
  * A ☰ button in the window's top-left corner opens a small panel: which software interface
- * the terminal shows (new or old), the page background behind the terminal, and the
- * terminal's drop shadow. Choices are remembered in this browser.
+ * the terminal shows (new or old), upcoming features to switch on (wired in app.js), the page
+ * background behind the terminal, and the terminal's drop shadow. Choices are remembered in
+ * this browser.
  *
  * So it stays out of recordings, the button fades away after a few seconds and comes back
  * when the pointer moves into the top-left corner or the button gets keyboard focus.

@@ -474,7 +474,7 @@
     });
     journalDirty = true;
     // …and counts in the daily summary of the business day it falls in.
-    summaryTxns.push({ ts: now, kind: "debit", cents: parseInt(digits || "0", 10), tip: 0, scheme: "cb", status: "accepted" });
+    summaryTxns.push({ ts: now, kind: "debit", cents: parseInt(digits || "0", 10), tip: 0, scheme: "cb", mode: "quick", status: "accepted" });   // keyed in on the terminal
   }
 
   /* ---- Filters: each group holds one value or none ("ALL") ---- */
@@ -827,19 +827,26 @@
 
   // Sample activity for the last five days, spread over day and night so that changing the
   // business-day hours visibly changes what is counted. Times past 24:00 are the next morning.
-  // [time, kind, cents, tip cents, scheme, status]
+  // Mode: "ecr" = started from the cash machine, "quick" = keyed in on the terminal alone.
+  // [time, kind, cents, tip cents, scheme, mode, status]
   var DAY_PATTERN = [
-    ["08:45", "debit", 1250, 0, "cb"],
-    ["11:20", "debit", 800, 100, "cb"],
-    ["12:05", "debit", 2340, 0, "mastercard"],
-    ["14:30", "debit", 1500, 0, "cb", "declined"],
-    ["17:40", "debit", 1800, 200, "cb"],
-    ["19:15", "debit", 3200, 0, "cb"],
-    ["21:50", "debit", 1450, 150, "mastercard"],
-    ["22:35", "cancellation", 1450, 0, "mastercard"],
-    ["24:40", "debit", 2200, 0, "cb"],
-    ["25:55", "debit", 900, 100, "cb"],
-    ["27:10", "credit", 500, 0, "cb"]
+    ["08:45", "debit", 1250, 0, "cb", "ecr"],
+    ["10:05", "debit", 1900, 0, "conecs", "ecr"],
+    ["11:20", "debit", 800, 100, "cb", "ecr"],
+    ["12:05", "debit", 2340, 0, "mastercard", "ecr"],
+    ["12:40", "debit", 950, 0, "conecs", "quick"],
+    ["13:10", "credit", 100, 0, "conecs", "ecr"],
+    ["14:30", "debit", 1500, 0, "cb", "ecr", "declined"],
+    ["15:25", "debit", 4200, 0, "visa", "ecr"],
+    ["17:40", "debit", 1800, 200, "cb", "quick"],
+    ["18:30", "debit", 3000, 0, "qr-cb", "ecr"],
+    ["19:15", "debit", 3200, 0, "cb", "ecr"],
+    ["20:10", "debit", 2000, 150, "qr-cb", "quick"],
+    ["21:50", "debit", 1450, 150, "mastercard", "ecr"],
+    ["22:35", "cancellation", 1450, 0, "mastercard", "ecr"],
+    ["24:40", "debit", 2200, 0, "cb", "ecr"],
+    ["25:55", "debit", 900, 100, "cb", "quick"],
+    ["27:10", "credit", 500, 0, "cb", "ecr"]
   ];
   var summaryTxns = [];
   (function seedSummary() {
@@ -851,25 +858,30 @@
         var ts = at(addDays(today, d), Number(hm[0]) * 60 + Number(hm[1]));
         if (ts > now) return;
         var nudge = p[1] === "debit" ? ((d + 5) * 3 + i) % 5 * 50 : 0;   // so each day's totals differ
-        summaryTxns.push({ ts: ts, kind: p[1], cents: p[2] + nudge, tip: p[3], scheme: p[4], status: p[5] || "accepted" });
+        summaryTxns.push({ ts: ts, kind: p[1], cents: p[2] + nudge, tip: p[3], scheme: p[4], mode: p[5], status: p[6] || "accepted" });
       });
     }
   })();
 
-  // Accepted operations in a business day, by type and by card scheme. Declined ones don't count.
+  // Accepted operations in a business day: by type, by mode and by scheme. Declined ones don't
+  // count. Every figure on both tabs comes from here, so the totals always agree.
   function totalsFor(w) {
-    var t = { debitN: 0, base: 0, tipN: 0, tips: 0, cancelN: 0, cancel: 0, creditN: 0, credit: 0, schemes: {} };
+    function bucket() { return { n: 0, base: 0, tipN: 0, tips: 0 }; }
+    var t = { debitN: 0, base: 0, tipN: 0, tips: 0, cancelN: 0, cancel: 0, creditN: 0, credit: 0,
+      modes: { ecr: bucket(), quick: bucket() }, schemes: {} };
     summaryTxns.forEach(function (x) {
       if (x.status !== "accepted" || x.ts < w.start || x.ts >= w.end) return;
-      var s = t.schemes[x.scheme] || (t.schemes[x.scheme] = { n: 0, net: 0 });
+      var s = t.schemes[x.scheme] || (t.schemes[x.scheme] = { n: 0, debits: 0, cancel: 0, credit: 0 });
       s.n++;
       if (x.kind === "debit") {
-        t.debitN++; t.base += x.cents; s.net += x.cents + x.tip;
-        if (x.tip) { t.tipN++; t.tips += x.tip; }
+        var m = t.modes[x.mode === "quick" ? "quick" : "ecr"];
+        t.debitN++; t.base += x.cents; s.debits += x.cents + x.tip;
+        m.n++; m.base += x.cents;
+        if (x.tip) { t.tipN++; t.tips += x.tip; m.tipN++; m.tips += x.tip; }
       } else if (x.kind === "cancellation") {
-        t.cancelN++; t.cancel += x.cents; s.net -= x.cents;
+        t.cancelN++; t.cancel += x.cents; s.cancel += x.cents;
       } else {
-        t.creditN++; t.credit += x.cents; s.net -= x.cents;
+        t.creditN++; t.credit += x.cents; s.credit += x.cents;
       }
     });
     t.debits = t.base + t.tips;
@@ -877,15 +889,33 @@
     return t;
   }
 
-  var SCHEMES = [
-    { id: "cb", name: "CB" },
-    { id: "mastercard", name: "Mastercard" }
+  // Payment methods, grouped as in Figma 1850:5027. Logos are drawn at the size they have there.
+  var METHOD_GROUPS = [
+    { id: "cards", name: "Cards", schemes: [
+      { id: "cb", name: "CB", logo: "assets/cb-small.svg", w: 44, h: 30 },
+      { id: "mastercard", name: "Mastercard", logo: "assets/scheme-mastercard.svg", w: 44, h: 31 },
+      { id: "visa", name: "Visa", logo: "assets/scheme-visa.svg", w: 63, h: 31 }
+    ] },
+    { id: "conecs", name: "Conecs TR", schemes: [
+      { id: "conecs", name: "Conecs", logo: "assets/scheme-conecs.svg", w: 44, h: 19 }
+    ] },
+    { id: "qr", name: "QR codes", schemes: [
+      { id: "qr-cb", name: "CB", logo: "assets/cb-small.svg", w: 44, h: 30 }
+    ] }
   ];
-  // "10 Nov 17:00", as the manual's "3 juil. 09h00"
-  var periodFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
+  var collapsedGroups = {};
+
+  // Upcoming features, switched from the stage menu (☰, top-left of the page) and remembered per browser.
+  var FLAGS_KEY = "payment-terminal:feature-flags";
+  var flags = { "ecr-modes": false };
+  try { var savedFlags = JSON.parse(localStorage.getItem(FLAGS_KEY) || "{}"); if (savedFlags && savedFlags["ecr-modes"] === true) flags["ecr-modes"] = true; } catch (e) { /* storage blocked */ }
+
+  // "10 Nov 2026 17:00" (Figma: "16 jan 2025 16:00")
+  var periodFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
   function stamp(d) { return periodFmt.format(d) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
-  function minus(cents) { return "-" + euros(cents); }
-  function signed(cents) { return cents < 0 ? minus(-cents) : euros(cents); }
+  function minus(cents) { return cents ? "-" + euros(cents) : euros(0); }     // never "-0,00 €"
+  function cell(cents, neg) { return cents ? (neg ? "-" : "") + euros(cents) : "-"; }  // empty grid cells read "-"
+  function signed(cents) { return cents < 0 ? "-" + euros(-cents) : euros(cents); }
   function tr(cls, label, amount) { return '<tr class="' + cls + '"><td>' + label + "</td><td>" + amount + "</td></tr>"; }
   function table(heading, body, total) {
     return '<table class="ds-table"><thead><tr><th scope="col">' + heading + '</th><th scope="col">Amount</th></tr></thead>' +
@@ -894,36 +924,95 @@
 
   var dsDay = null;   // midnight of the day the business day on show opens on
 
+  // Accepted debits, split by mode when "ECR & Quick mode" is on (Figma 2563:15083).
+  function debitRows(t) {
+    var head = tr("ds-main", "Accepted debits (" + t.debitN + ")", euros(t.debits));
+    if (!flags["ecr-modes"]) {
+      return head +
+        tr("ds-sub", "Debits (" + t.debitN + ")", euros(t.base)) +
+        tr("ds-sub", "Tips (" + t.tipN + ")", euros(t.tips));
+    }
+    function mode(label, m) {
+      return tr("ds-sub", label + " (" + m.n + ")", euros(m.base + m.tips)) +
+        tr("ds-sub ds-sub--2", "Debits", euros(m.base)) +
+        tr("ds-sub ds-sub--2", "Tips (" + m.tipN + ")", euros(m.tips));
+    }
+    return head + mode("ECR mode*", t.modes.ecr) + mode("Quick mode**", t.modes.quick);
+  }
+
+  function infoBlock(t) {
+    var n = t.modes.quick.n;
+    var html = '<div class="ds-info"><h2 class="ds-info__head">More info</h2><div class="ds-info__body">' +
+      "<p>* Payments made with the cash machine connected<br>** Payments made on the terminal, without the cash machine</p>";
+    if (n) {
+      html += "<p>" + n + (n === 1 ? " transaction was" : " transactions were") + " made without the cash machine.</p>" +
+        "<p>Add " + (n === 1 ? "it" : "them") + " to the cash machine by hand, otherwise its total won’t match the one on the terminal.</p>";
+    }
+    return html + "</div></div>";
+  }
+
+  function methodGroup(g, t) {
+    var rows = [], sum = { n: 0, debits: 0, cancel: 0, credit: 0 };
+    g.schemes.forEach(function (s) {
+      var v = t.schemes[s.id];
+      if (!v || !v.n) return;
+      sum.n += v.n; sum.debits += v.debits; sum.cancel += v.cancel; sum.credit += v.credit;
+      rows.push('<tr><th scope="row"><span class="ds-type"><img src="' + s.logo + '" alt="' + s.name + '" width="' + s.w + '" height="' + s.h + '">(' + v.n + ")</span></th>" +
+        "<td>" + cell(v.debits) + "</td><td>" + cell(v.cancel, true) + "</td><td>" + cell(v.credit, true) + "</td></tr>");
+    });
+    if (!rows.length) return "";
+    var open = !collapsedGroups[g.id];
+    return '<section class="ds-group">' +
+      '<button class="ds-group__head" type="button" data-action="toggle-ds-group" data-group="' + g.id + '" aria-expanded="' + open + '" aria-controls="dsGrid-' + g.id + '">' +
+        '<span class="ds-group__name">' + g.name + " (" + sum.n + ")</span><span>" + signed(sum.debits - sum.cancel - sum.credit) + "</span>" +
+        '<img src="assets/icon-down.svg" alt=""></button>' +
+      '<table class="ds-grid" id="dsGrid-' + g.id + '"' + (open ? "" : " hidden") + ">" +
+        '<thead><tr><th scope="col">Type</th><th scope="col">Debits</th><th scope="col">Cancellations</th><th scope="col">Credits</th></tr></thead>' +
+        "<tbody>" + rows.join("") + "</tbody>" +
+        '<tfoot><tr><th scope="row">Total</th><td>' + cell(sum.debits) + "</td><td>" + cell(sum.cancel, true) + "</td><td>" + cell(sum.credit, true) + "</td></tr></tfoot>" +
+      "</table></section>";
+  }
+
   function renderSummary() {
     var w = windowFor(dsDay);
     var t = totalsFor(w);
     dsView.querySelector("[data-ds-period]").textContent = stamp(w.start) + " → " + stamp(new Date(w.end - 60000));
-    dsView.querySelector("[data-ds-total]").textContent = fmt.format(t.total / 100) + "€";   // no space, as in the manual
+    dsView.querySelector("[data-ds-total]").textContent = signed(t.total);
 
-    dsView.querySelector("[data-ds-panel='ops']").innerHTML = table("Type (number of transactions)",
-      "<tbody>" +
-        tr("ds-main", "Accepted debits (" + t.debitN + ")", euros(t.debits)) +
-        tr("ds-sub", "Debits (" + t.debitN + ")", euros(t.base)) +
-        tr("ds-sub", "Tips (" + t.tipN + ")", euros(t.tips)) +
-      "</tbody>" +
+    dsView.querySelector("[data-ds-panel='ops']").innerHTML = table("Type (transaction volume)",
+      "<tbody>" + debitRows(t) + "</tbody>" +
       "<tbody>" + tr("ds-main", "Accepted cancellations (" + t.cancelN + ")", minus(t.cancel)) + "</tbody>" +
-      "<tbody>" + tr("ds-main", "Accepted credits (" + t.creditN + ")", minus(t.credit)) + "</tbody>",
-      euros(t.total));
+      "<tbody>" + tr("ds-main", "Accepted refunds (" + t.creditN + ")", minus(t.credit)) + "</tbody>",
+      signed(t.total)) + (flags["ecr-modes"] ? infoBlock(t) : "");
 
-    dsView.querySelector("[data-ds-panel='methods']").innerHTML = table("Method (number of transactions)",
-      SCHEMES.map(function (s) {
-        var v = t.schemes[s.id] || { n: 0, net: 0 };
-        return "<tbody>" + tr("ds-main", s.name + " (" + v.n + ")", signed(v.net)) + "</tbody>";
-      }).join(""),
-      signed(t.total));
+    dsView.querySelector("[data-ds-panel='methods']").innerHTML =
+      '<div class="ds-groups">' + METHOD_GROUPS.map(function (g) { return methodGroup(g, t); }).join("") + "</div>";
   }
+
+  function toggleDsGroup(btn) {
+    var id = btn.getAttribute("data-group");
+    collapsedGroups[id] = !collapsedGroups[id];
+    btn.setAttribute("aria-expanded", String(!collapsedGroups[id]));
+    btn.nextElementSibling.hidden = !!collapsedGroups[id];
+  }
+
+  // Stage menu › Upcoming features. Re-renders the summary in place if it is on screen.
+  document.querySelectorAll("[data-flag]").forEach(function (input) {
+    var key = input.getAttribute("data-flag");
+    input.checked = !!flags[key];
+    input.addEventListener("change", function () {
+      flags[key] = input.checked;
+      try { localStorage.setItem(FLAGS_KEY, JSON.stringify(flags)); } catch (e) { /* not remembered */ }
+      if (dsDay) renderSummary();
+    });
+  });
 
   function activePanel() { return dsView.querySelector("[data-ds-panel]:not([hidden])"); }
 
   // Rows rise and fade in one after another, as in the history list.
   function cascadeRows(container, startDelay, selector) {
     if (reducedMotion.matches) return;
-    container.querySelectorAll(selector || "tbody tr, tfoot tr").forEach(function (el, i) {
+    container.querySelectorAll(selector || ".ds-table tbody tr, .ds-table tfoot tr, .ds-info, .ds-group__head, .ds-grid tr").forEach(function (el, i) {
       el.getAnimations().forEach(function (a) { a.cancel(); });
       el.animate(
         [{ opacity: 0, transform: "translateY(" + CASCADE.rise + "px)" }, { opacity: 1, transform: "none" }],
@@ -1080,6 +1169,7 @@
   // Returns true when the click belonged to the Daily summary screens.
   function handleSummaryClick(action, el) {
     switch (action) {
+      case "toggle-ds-group": toggleDsGroup(el); return true;
       case "summary-tab":
         if (el.getAttribute("aria-selected") !== "true") selectTab(el.getAttribute("data-tab"), false, true);
         return true;

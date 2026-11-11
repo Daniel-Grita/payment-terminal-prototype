@@ -41,7 +41,7 @@
   --c-hint: #b8b8b8;              /* "Default: from 00:00 to 23:59" */
   --c-switch-on: #2b2b2b;         /* switch track, on */
   --c-field: #d3d3d3;             /* time field, not focused */
-  --c-sub: #8a8a8a;               /* daily summary sub-rows ("• Debits (2)") */
+  --c-sub: #979797;               /* daily summary sub-rows ("• Debits (10)"), Figma 1732:26911 */
 
   /* ---- Colour: action keys ---- */
   --c-cancel-bg: #f1a7a7;

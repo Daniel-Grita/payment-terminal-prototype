@@ -28,7 +28,7 @@ Everything starts from the amount-entry screen: ✓ runs a payment, ☰ opens th
 |---|---|---|
 | [Payment](#payment) | the keypad | Figma › Payment Flow (New) |
 | [Transaction history](#transaction-history) | ☰ › Transaction's history | Figma › Transaction History |
-| [Daily summary](#daily-summary-and-business-day-hours) | ☰ › Daily summary, ☰ › Settings | PayXpress manual ("Total journalier") |
+| [Daily summary](#daily-summary-and-business-day-hours) | ☰ › Daily summary, ☰ › Settings | Figma 1732:26911, 1850:5027, 2563:15083; settings from the PayXpress manual |
 | [File collection's history](#file-collections-history) | ☰ › File collection's history | Figma › File Collection |
 
 ### Payment
@@ -62,7 +62,9 @@ Sales approved in the payment flow are added under today's date, with their amou
 
 ### Daily summary and business-day hours
 
-No Figma frames: matched to the PayXpress manual's screenshots, using this prototype's components.
+D1 follows Figma: **Operations** (1732:26911) and **Payment methods** (1850:5027, cards / Conecs TR / QR codes, each group collapsible). The figures are computed from sample activity, so every total agrees across both tabs. D2 and D3 follow the PayXpress manual.
+
+**Upcoming features** (stage menu, the ☰ in the page's top-left corner; remembered per browser): **ECR & Quick mode** splits Accepted debits into payments made through the cash machine and payments made on the terminal alone, and adds the **More info** note (Figma 2563:15083). Payments made in the prototype count as Quick mode.
 
 | # | Screen | Moves on |
 |---|---|---|
