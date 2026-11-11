@@ -12,32 +12,32 @@
 
   // Figma easing names → CSS
   var EASE_OUT = "cubic-bezier(0, 0, 0.58, 1)";
-  var EASE_IN_OUT = "cubic-bezier(0.42, 0, 0.58, 1)";
-  var EASE_LOADER = "cubic-bezier(0.5, 0, 0.5, 1)";
+  var EASE_IN = "cubic-bezier(0.42, 0, 1, 1)";
 
   var INSTANT = { duration: 0 };
   var DISSOLVE_300 = { duration: 300, easing: EASE_OUT };
+  var CARD_TAPPED = { duration: 800, easing: EASE_OUT };   // Present Card → Card Read
 
   // Automatic sequence: after `hold` ms on a state, go to `next` with `transition`.
+  // Timings from Figma "PayXpress Compose" › Payment Flow (New), 2026-11-11.
+  // Present Card has no timer: the participant clicks the screen to "tap" the card.
   var SEQUENCE = {
     "please-wait":   { hold: 2000, next: "present-card",  transition: INSTANT },
-    "present-card":  { hold: 3000, next: "card-read",     transition: { duration: 800, easing: EASE_OUT } },
-    "card-read":     { hold: 2000, next: "please-wait-2", transition: INSTANT },
-    "please-wait-2": { hold: 500,  next: "authorization", transition: INSTANT },
-    "authorization": { hold: 2000, next: "approved",      transition: { duration: 300, easing: EASE_IN_OUT } },
-    // Figma has a 2 s / dissolve 300 ms ease-out timer on Approved with no destination;
-    // it now returns to a fresh sale (brief D1). Tapping still returns immediately.
-    "approved":      { hold: 2000, next: "amount-entry",  transition: DISSOLVE_300 }
+    "card-read":     { hold: 1000, next: "please-wait-2", transition: INSTANT },
+    "please-wait-2": { hold: 800,  next: "authorization", transition: INSTANT },
+    "authorization": { hold: 2000, next: "approved",      transition: INSTANT },
+    "approved":      { hold: 2000, next: "receipt",       transition: DISSOLVE_300 }
   };
 
-  // What each transaction screen shows (Figma frames 2003:2104 … 2003:670).
+  // What each transaction screen shows (Figma frames 5735:43828 … 5987:6264).
   var TXN_SCREENS = {
-    "please-wait":   { body: "loading", prompt: "please wait",                                     announce: "Please wait" },
-    "present-card":  { body: "card",    prompt: "Inserez, passez ou présentez<br>votre carte",       announce: "Insérez, passez ou présentez votre carte", leds: true },
-    "card-read":     { body: "loading", prompt: "card read",                                       announce: "Card read" },
-    "please-wait-2": { body: "loading", prompt: "please wait",                                     announce: "Please wait" },
-    "authorization": { body: "loading", prompt: "Authorization please wait<br>Authorisation - patientez", announce: "Authorization, please wait", scheme: "CB" },
-    "approved":      { body: "approved",                                                           announce: "Approved. Paiement accepté", date: true }
+    "please-wait":   { body: "loading", prompt: "please wait",                    announce: "Please wait" },
+    "present-card":  { body: "card",    prompt: "Insert, swipe or tap<br>your card", announce: "Insert, swipe or tap your card", leds: true },
+    "card-read":     { body: "loading", prompt: "card read",                      announce: "Card read" },
+    "please-wait-2": { body: "loading", prompt: "please wait",                    announce: "Please wait" },
+    "authorization": { body: "loading", prompt: "Authorization<br>Please wait",   announce: "Authorization, please wait", scheme: "CB" },
+    "approved":      { body: "approved",                                          announce: "Approved. Payment accepted", date: true },
+    "receipt":       { body: "receipt",                                           announce: "Approved. Cardholder receipt?", date: true }
   };
 
   var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -66,30 +66,51 @@
     if (cfg.body === "loading") {
       body =
         '<p class="panel__prompt">' + cfg.prompt + "</p>" +
-        '<div class="loader" aria-hidden="true">' +
-        '  <img class="loader__ring" src="assets/loader-ring.svg" alt="">' +
-        '  <img class="loader__logo" src="assets/loader-logo@4x.png" alt="">' +
-        "</div>";
+        // Looping GIF from "Payment Animation.mp4"; a still frame when reduced motion is on.
+        '<picture class="loader" aria-hidden="true">' +
+        '  <source srcset="assets/loader-still.png" media="(prefers-reduced-motion: reduce)">' +
+        '  <img src="assets/loader.gif" alt="">' +
+        "</picture>";
     } else if (cfg.body === "card") {
       body =
         '<p class="panel__prompt panel__prompt--muted">' + cfg.prompt + "</p>" +
         '<img class="schemes" src="assets/card-schemes@2x.png" alt="CB, Visa, Mastercard, American Express, Diners Club, Discover, UnionPay, JCB">' +
-        // Figma fill is an animated GIF (500×500); falls back to the static export until the file is added.
-        '<img class="terminal-art" src="assets/terminal-illustration.gif" alt="" onerror="this.onerror=null;this.src=\'assets/terminal-illustration@2x.png\'">' +
-        '<button class="cta" type="button" data-action="cancel-transaction">cancel transaction</button>';
+        // Looping GIF from "POS Animation.mp4"; a still frame when reduced motion is on.
+        '<picture class="terminal-art" aria-hidden="true">' +
+        '  <source srcset="assets/present-card-still.png" media="(prefers-reduced-motion: reduce)">' +
+        '  <img src="assets/present-card.gif" alt="">' +
+        "</picture>" +
+        '<button class="cta" type="button" data-action="cancel-transaction">cancel transaction</button>' +
+        // Clicking anywhere on the screen stands in for tapping the card; this is the keyboard route.
+        '<button class="sr-only" type="button" data-action="card-tapped">Tap card</button>';
     } else if (cfg.body === "approved") {
       body =
-        '<div class="banner">' +
-        '  <div class="banner__title">approved</div>' +
-        '  <div class="banner__sub">Paiement accepté</div>' +
-        '  <div class="banner__check"><img src="assets/icon-check.svg" alt=""></div>' +
-        "</div>" +
-        '<img class="cb-logo" src="assets/cb-logo@2x.png" alt="CB">' +
-        '<button class="new-sale" type="button" data-action="new-sale">Nouvelle vente</button>';
+        // Plays once from "Payment animation 2.mp4" each time Approved appears (see replayBanner).
+        '<picture class="banner">' +
+        '  <source srcset="assets/approved-banner-still.png" media="(prefers-reduced-motion: reduce)">' +
+        '  <img src="assets/approved-banner.gif" alt="Approved. Payment accepted" data-replay>' +
+        "</picture>" +
+        '<img class="cb-logo" src="assets/cb-logo@2x.png" alt="CB">';
+    } else if (cfg.body === "receipt") {
+      body =
+        '<img class="banner" src="assets/approved-banner-still.png" alt="Approved. Payment accepted">' +
+        '<p class="receipt-title">Cardholder receipt?</p>' +
+        '<p class="receipt-label receipt-label--digital">Digital receipt options</p>' +
+        // View receipt opens the ticket (Figma wires "Send by email"; changed on request 2026-11-11).
+        receiptOption("view", "view receipt", "icon-view.svg", 307, "open-ticket") +
+        receiptOption("email", "send by email", "icon-email.svg", 432) +
+        receiptOption("qr", "scan qr code", "icon-qr.svg", 557) +
+        '<div class="receipt-or" aria-hidden="true"><span></span><span>or</span><span></span></div>' +
+        '<p class="receipt-label receipt-label--print">Print your receipt</p>' +
+        receiptOption("print", "print", "icon-printer.svg", 823) +
+        // Not wired in Figma; ends the sale so the flow has no dead end.
+        '<button class="cta cta--dark" type="button" data-action="skip">skip</button>';
     }
 
+    var overlay = cfg.body === "receipt" ? ticketTemplate() : "";
+
     return (
-      '<section class="view view--txn' + (cfg.body === "approved" ? " view--approved" : "") + '" data-view="' + id + '">' +
+      '<section class="view view--txn' + (cfg.body === "approved" ? " view--approved" : "") + (cfg.body === "card" ? " view--card" : "") + '" data-view="' + id + '">' +
       '  <div class="statusbar statusbar--muted">' +
       '    <span class="statusbar__time">16:25</span>' +
       '    <img class="statusbar__icons" src="assets/status-icons-muted.svg" alt="">' +
@@ -103,7 +124,55 @@
       '    <span class="amount__cur" aria-hidden="true">€</span>' +
       "  </div>" +
       '  <div class="panel">' + body + "</div>" +
+      overlay +
       "</section>"
+    );
+  }
+
+  // One row of the receipt options list. Only rows with an action respond; the rest are
+  // shown as designed but inert (Figma wires nothing to them).
+  function receiptOption(key, label, icon, top, action) {
+    var inner =
+      '<span class="receipt-option__icon"><img src="assets/' + icon + '" alt=""></span>' +
+      '<span class="receipt-option__label">' + label + "</span>";
+    var style = ' style="top:' + top + 'px"';
+    return action
+      ? '<button class="receipt-option receipt-option--' + key + '" type="button" data-action="' + action + '"' + style + ">" + inner + "</button>"
+      : '<div class="receipt-option receipt-option--' + key + '"' + style + ">" + inner + "</div>";
+  }
+
+  // Figma "P3 / [Ticket] Ticket in Screen" (5987:4788): a 60% black overlay with the paper
+  // receipt. Lines are live text so AMOUNT shows the amount actually entered.
+  function ticketTemplate() {
+    var line = function (t) { return '<p class="ticket__line">' + t + "</p>"; };
+    var space = '<span class="ticket__space"></span>';
+    var big = '<span class="ticket__space ticket__space--big"></span>';
+    return (
+      '<div class="ticket" role="dialog" aria-label="Customer receipt" hidden>' +
+      '  <div class="statusbar statusbar--muted">' +
+      '    <span class="statusbar__time">16:25</span>' +
+      '    <img class="statusbar__icons" src="assets/status-icons-muted.svg" alt="">' +
+      "  </div>" +
+      '  <div class="ticket__paper">' +
+      '    <img class="ticket__edge" src="assets/ticket-edge-top.svg" alt="">' +
+      '    <div class="ticket__body">' +
+      '      <p class="ticket__title">bank card</p>' +
+      '      <div class="ticket__icon"><img src="assets/icon-contactless.svg" alt=""></div>' +
+      big + line("contactless") + line("A0000000041010") + space +
+      line("debit mastercard") + line("18/11/25 - 17:12:50") + space +
+      line("payxpert france 69") + line("lyon") + big + big +
+      line("0001695") + space + line("16808") + line("54003281000041") + space +
+      line("XXXXXXXXXXXX4751") + line("D2429E7B493D9005") + space +
+      line("200 001 000018 72 C @") + line("authorization: 777122") + big + big +
+      line("ref.<br>amount: <span data-amount-value>0,00</span> eur") + big + big +
+      line("sale<br>customer receipt<br>please keep") +
+      "    </div>" +
+      '    <img class="ticket__edge" src="assets/ticket-edge-bottom.svg" alt="">' +
+      "  </div>" +
+      '  <div class="ticket__btn ticket__btn--email" aria-hidden="true"><img src="assets/icon-email.svg" alt=""></div>' +
+      '  <div class="ticket__btn ticket__btn--print" aria-hidden="true"><img src="assets/icon-printer.svg" alt=""></div>' +
+      '  <button class="ticket__close" type="button" data-action="close-ticket">close</button>' +
+      "</div>"
     );
   }
 
@@ -168,50 +237,6 @@
   }
 
   /* ------------------------------------------------------------------ *
-   * Loader motion — Figma keyframes, phase-locked to the document       *
-   * timeline so it never jumps when the screen changes S4 → S5 → S6.    *
-   * ------------------------------------------------------------------ */
-
-  function startLoaders() {
-    if (reducedMotion.matches) return;
-    var timing = { duration: 2000, iterations: Infinity };
-
-    screen.querySelectorAll(".loader__ring").forEach(function (ring) {
-      var spin = ring.animate(
-        [
-          { transform: "rotate(0deg)", easing: EASE_LOADER },
-          { transform: "rotate(-360deg)" }
-        ],
-        timing
-      );
-      var fade = ring.animate(
-        [
-          { opacity: 0.3, offset: 0, easing: EASE_LOADER },
-          { opacity: 0.8, offset: 0.5, easing: EASE_IN_OUT },
-          { opacity: 0.3, offset: 1 }
-        ],
-        timing
-      );
-      spin.startTime = 0;
-      fade.startTime = 0;
-    });
-
-    screen.querySelectorAll(".loader__logo").forEach(function (logo) {
-      var pulse = logo.animate(
-        [
-          { transform: "scale(0.9)", opacity: 0.6, offset: 0, easing: EASE_LOADER },
-          { transform: "scale(1)", opacity: 1, offset: 0.25, easing: EASE_IN_OUT },
-          { transform: "scale(0.9)", opacity: 0.6, offset: 0.75, easing: EASE_IN_OUT },
-          { transform: "scale(0.9)", opacity: 0.6, offset: 1 }
-        ],
-        timing
-      );
-      pulse.startTime = 0;
-    });
-  }
-  startLoaders();
-
-  /* ------------------------------------------------------------------ *
    * Navigation                                                          *
    * ------------------------------------------------------------------ */
 
@@ -257,10 +282,42 @@
       }, step.hold);
     }
 
-    if (id === "approved") {
-      var btn = to.querySelector("[data-action='new-sale']");
-      if (btn) btn.focus({ preventScroll: true });
-    }
+    if (id === "approved") replayBanner(to);
+    if (id !== "receipt") closeTicket(false);
+  }
+
+  /* Ticket overlay on the Receipt screen. Figma: Smart Animate 300 ms ease-in to open,
+     "Back" with no transition to close. */
+  function ticketEl() { return views["receipt"].querySelector(".ticket"); }
+
+  function openTicket() {
+    var t = ticketEl();
+    t.hidden = false;
+    if (!reducedMotion.matches) t.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: EASE_IN });
+    t.querySelector("[data-action='close-ticket']").focus({ preventScroll: true });
+    announce("Customer receipt");
+  }
+
+  function closeTicket(restoreFocus) {
+    var t = ticketEl();
+    if (t.hidden) return;
+    t.hidden = true;
+    if (restoreFocus) views["receipt"].querySelector("[data-action='open-ticket']").focus({ preventScroll: true });
+  }
+
+  // A GIF that plays once only restarts when it gets a new URL, so each visit to Approved
+  // gets a fresh object URL for the same (already downloaded) file.
+  var bannerBlob = null;
+  if (window.fetch && location.protocol !== "file:") {
+    fetch("assets/approved-banner.gif").then(function (r) { return r.blob(); })
+      .then(function (b) { bannerBlob = b; }).catch(function () {});
+  }
+  function replayBanner(view) {
+    var img = view.querySelector("img[data-replay]");
+    if (!img || reducedMotion.matches) return;
+    if (img._url) URL.revokeObjectURL(img._url);
+    img._url = bannerBlob ? URL.createObjectURL(bannerBlob) : null;
+    img.src = img._url || "assets/approved-banner.gif?" + Date.now();
   }
 
   function newSale() {
@@ -296,13 +353,20 @@
     var keyEl = e.target.closest("[data-key]");
     if (keyEl) { press(keyEl.getAttribute("data-key")); return; }
 
-    var action = e.target.closest("[data-action]");
-    if (action && action.getAttribute("data-action") === "cancel-transaction" && current === "present-card") {
-      newSale();   // brief D2: cancel resets the sale
+    var actionEl = e.target.closest("[data-action]");
+    var action = actionEl && actionEl.getAttribute("data-action");
+
+    if (current === "present-card") {
+      if (action === "cancel-transaction") { newSale(); return; }   // brief D2: cancel resets the sale
+      // Any other click on Present Card = the customer taps their card.
+      if (e.target.closest(".view--card")) go("card-read", CARD_TAPPED);
       return;
     }
-    if (current === "approved" && e.target.closest(".view--approved")) {
-      newSale();   // brief D1: tap anywhere on Approved
+
+    if (current === "receipt") {
+      if (action === "open-ticket") openTicket();
+      else if (action === "close-ticket") closeTicket(true);
+      else if (action === "skip") newSale();
     }
   });
 

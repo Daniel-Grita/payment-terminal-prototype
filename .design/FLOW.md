@@ -4,6 +4,27 @@ Replaces the information-architecture phase: this is one linear flow, so the str
 is a state machine, not navigation. Timings and transitions are read from the Figma
 prototype reactions.
 
+## Update 2026-11-11 — "PayXpress Compose" › Payment Flow (New)
+
+The flow now comes from Figma file `SgRqzQkSTAUxX8HAyYqgrp`, section `5987:4877`. Copy is in
+English ("with tips", "Insert, swipe or tap your card", "Authorization / Please wait",
+"Payment accepted"). Current sequence, which supersedes the tables below where they differ:
+
+```
+S1 amount-entry ─ ✓ ─ dissolve 300 ─▶ S2 please-wait ─ 2.0 s ─▶ S3 present-card
+S3 present-card ─ CLICK the screen (was a timer; Figma now 5 s) ─ dissolve 800 ─▶ S4 card-read
+   └─ CANCEL TRANSACTION ─▶ S1 (fresh sale)
+S4 card-read ─ 1.0 s ─▶ S5 please-wait-2 ─ 0.8 s ─▶ S6 authorization ─ 2.0 s, instant ─▶ S7 approved
+S7 approved ─ banner GIF plays once, CB fades in ─ 2.0 s, dissolve 300 ─▶ S8 receipt
+S8 receipt ─ "View receipt" row ─ fade 300 ease-in ─▶ S9 ticket overlay
+   (Figma wires this to "Send by email"; moved to View receipt on request, 2026-11-11)
+   └─ SKIP ─▶ S1 (not wired in Figma; added so the flow has no dead end)
+S9 ticket ─ CLOSE (Figma "Back") ─▶ S8
+```
+
+Send by email, Scan QR code, Print, and the ticket's @ / print buttons are shown but inert,
+as in Figma. The ticket's AMOUNT line shows the amount entered.
+
 ## States
 
 | # | State | Figma frame | Header shows | Body |
@@ -62,6 +83,14 @@ Format: French, comma decimal, superscript €, thousands with a narrow space (`
 Figma stores easing on the keyframe that starts a segment, so the spin itself eases
 in and out once per revolution (it is not a constant-speed spin).
 
-The loader keeps running across S4 → S5 → S6 rather than restarting, so the instant
-switches don't make it jump. Reduced motion: rotation and pulse stop; the text alone
-carries the state.
+**Since 2026-11-11 the build plays the designer's own animations instead of rebuilding
+these keyframes in code:**
+
+| Screen(s) | Asset | Source | Loop |
+|---|---|---|---|
+| S2, S4, S5, S6 | `assets/loader.gif` (94×94, shown at 170×170) | `Payment Animation.mp4`, frames 0–120 (two 2 s cycles; frame 121 matches frame 0) | seamless, 15 fps |
+| S3 | `assets/present-card.gif` (528×436) | `POS Animation.mp4`, full 2.27 s: card moves in (~1 s), holds, restarts | 25 fps |
+
+Both are cropped to their content, with near-white video noise (≥242) set to pure white
+so they sit on the #ffffff panel without a visible box. Reduced motion shows a still frame.
+All loader images share one GIF, so the browser keeps them in sync across S4 → S5 → S6.

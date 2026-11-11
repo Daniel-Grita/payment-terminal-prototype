@@ -67,6 +67,4 @@
   /* ---- Motion (from Figma prototype reactions + Motion keyframes) ---- */
   --ease-out: cubic-bezier(0, 0, 0.58, 1);         /* Figma EASE_OUT */
   --ease-in-out: cubic-bezier(0.42, 0, 0.58, 1);   /* Figma EASE_IN_AND_OUT */
-  --ease-loader-start: cubic-bezier(0.5, 0, 0.5, 1);
-  --loader-cycle: 2000ms;
 }

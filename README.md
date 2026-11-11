@@ -20,15 +20,19 @@ Then open <http://localhost:5173>.
 
 ## The flow
 
+Source: Figma "PayXpress Compose" › Payment Flow (New).
+
 | # | Screen | Moves on |
 |---|---|---|
 | 1 | Amount entry | ✓ with an amount (dissolve 300 ms) |
 | 2 | Please wait | after 2 s |
-| 3 | Present card | after 3 s (dissolve 800 ms) · **Cancel transaction** returns to 1 |
-| 4 | Card read | after 2 s |
-| 5 | Please wait | after 0.5 s |
-| 6 | Authorization | after 2 s (dissolve 300 ms) |
-| 7 | Approved | after 2 s, or tap, back to a fresh sale |
+| 3 | Present card | **click the screen** to tap the card (dissolve 800 ms) · **Cancel transaction** returns to 1 |
+| 4 | Card read | after 1 s |
+| 5 | Please wait | after 0.8 s |
+| 6 | Authorization | after 2 s |
+| 7 | Approved | banner animation plays, CB logo fades in · after 2 s (dissolve 300 ms) |
+| 8 | Cardholder receipt | **View receipt** opens the ticket · **Skip** starts a new sale |
+| 9 | Ticket (overlay) | **Close** returns to 8 |
 
 **Keypad:** digits fill from the cents (5 → 0,05 → 0,50 → 5,00 €), ← deletes,
 ✕ clears, ✓ at 0,00 € shakes the amount. Maximum 99 999,99 €.
@@ -48,5 +52,6 @@ Then open <http://localhost:5173>.
 ## Notes
 
 - Lato (400 / 600 / 800) and Roboto load from CDNs, so the prototype needs an internet connection to render with the right type.
-- The Present Card terminal drawing is an animated GIF in Figma. Drop it in as `assets/terminal-illustration.gif` and it plays; until then the static frame is shown.
+- Animations are GIFs made from the designer's MP4s: `assets/loader.gif` (Please wait, Card read, Authorization) and `assets/present-card.gif` (Present card) loop; `assets/approved-banner.gif` plays once each time Approved appears. With reduced motion on, a still frame shows instead.
+- The ticket is set in Monaco in Figma (macOS only); elsewhere it falls back to Fira Mono.
 - Non-goals for this version: other flows, declined path, tips, PIN, keyboard input. The ☰, ⇄ and chip controls are shown but inert.

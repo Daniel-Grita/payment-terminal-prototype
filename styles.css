@@ -266,17 +266,21 @@ img { display: block; }
 
 /* ---------- Loader ---------- */
 
+/* Figma "Loader Payxpress" box: 170 × 170 at panel (270, 375). The GIF is the ring's
+   94 × 94 crop from "Payment Animation.mp4", scaled to fill that box. */
 .loader {
   position: absolute; left: 270px; top: 375px;
   width: 170px; height: 170px;
 }
-.loader__ring { position: absolute; inset: 0; width: 170px; height: 170px; }
-.loader__logo { position: absolute; left: 63px; top: 48px; width: 45px; height: 75px; }
+.loader img { display: block; width: 170px; height: 170px; }
 
 /* ---------- Present Card ---------- */
 
 .schemes { position: absolute; left: 21px; top: 145px; width: 679px; height: 55px; }
-.terminal-art { position: absolute; left: 81px; top: 249px; width: 548px; height: 548px; object-fit: cover; } /* Figma fill mode: FILL */
+/* "POS Animation.mp4" cropped to its moving content and scaled 1.056× so the terminal
+   drawing matches the size and top-left of Figma's 548 × 548 art box at panel (81, 249). */
+.terminal-art { position: absolute; left: 137px; top: 261px; width: 528px; height: 436px; }
+.terminal-art img { display: block; width: 528px; height: 436px; }
 .cta {
   position: absolute; left: 11px; top: 1064px;
   width: 690px; height: 72px;
@@ -298,24 +302,118 @@ img { display: block; }
 /* ---------- Approved ---------- */
 
 .view--approved { cursor: pointer; }
-.banner {
-  position: absolute; left: 0; top: 0;
-  width: 710px; height: 84px;
-  background: linear-gradient(90deg, var(--c-valid-bg) 0%, var(--c-gray-50) 90%);
-  color: var(--c-valid-ink);
-  text-align: center;
+/* "Payment animation 2.mp4" is a 1.23× capture of this screen; the banner is cropped from
+   it and scaled to Figma's banner box (710 × 84 at the top of the panel). */
+.banner { position: absolute; left: 0; top: 0; width: 710px; height: 84px; }
+.banner img { display: block; width: 710px; height: 84px; }
+/* Cropped to the CB mark itself (the Figma image carried a light-grey #FCFCFF backdrop);
+   same position as the mark inside Figma's 527 × 316 image at panel (91, 323). */
+.cb-logo { position: absolute; left: 255px; top: 382.5px; width: 199px; height: 137px; }
+.view--approved.is-active .cb-logo { animation: cb-fade-in 500ms var(--ease-out) 150ms both; }
+@keyframes cb-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .view--approved.is-active .cb-logo { animation: none; }
+}
+/* Present Card: clicking the screen stands in for tapping the card. */
+.view--card { cursor: pointer; }
+
+/* =====================================================================
+   S8 · Receipt / Cardholder / Approved (Figma 5987:6264), panel coords
+   ===================================================================== */
+
+.receipt-title {
+  position: absolute; left: 186px; top: 124px; width: 342px; margin: 0;
+  text-align: center; text-transform: uppercase;
+  font-size: var(--fs-prompt); line-height: var(--lh-prompt); color: var(--c-black);
+}
+.receipt-label {
+  position: absolute; margin: 0;
+  font-size: var(--fs-label); line-height: 28px; text-transform: uppercase; color: var(--c-black);
+}
+.receipt-label--digital { left: 150px; top: 259px; width: 350px; }
+.receipt-label--print   { left: 216px; top: 775px; width: 279px; text-align: center; }
+
+.receipt-option {
+  position: absolute; left: 10px;
+  width: 689px; height: 110px;
+  margin: 0; padding: 0 20px 0 0; border: 0;
+  display: flex; align-items: center; gap: 20px;
+  border-radius: var(--r-key);
+  background: var(--c-gray-50);
+  box-shadow: var(--shadow-key);
+  overflow: hidden;
+  text-align: left;
+  font: inherit; font-size: var(--fs-cta); line-height: 38px;
   text-transform: uppercase;
+  color: var(--c-ink-muted);
 }
-.banner__title { position: absolute; left: 0; right: 0; top: 7px; font-size: 30px; line-height: 36px; }
-.banner__sub { position: absolute; left: 0; right: 0; top: 43px; font-size: var(--fs-label); line-height: 34px; font-weight: 600; }
-.banner__check {
-  position: absolute; left: 631px; top: 8px;
-  width: 69px; height: 69px;
-  border-radius: 50%;
-  background: var(--c-valid-bg);
+.receipt-option--print { left: 11px; }
+button.receipt-option { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button.receipt-option:active { background: var(--c-gray-200); }
+button.receipt-option:focus-visible { outline: 4px solid var(--c-black); outline-offset: 3px; }
+.receipt-option__icon {
+  flex: none; width: 85px; height: 110px;
   display: grid; place-items: center;
+  background: var(--c-gray-100);
+  box-shadow: inset -1px 0 0 #c7c7c7;   /* Figma: 1px right stroke, inside */
 }
-.banner__check img { width: 30px; height: 30px; }
-.cb-logo { position: absolute; left: 91px; top: 323px; width: 527px; height: 316px; }
-.new-sale { position: absolute; inset: 0; opacity: 0; border: 0; background: transparent; cursor: pointer; }
-.new-sale:focus-visible { opacity: 1; outline: 4px solid var(--c-black); outline-offset: -8px; }
+.receipt-option__icon img { width: 30px; height: 30px; }
+
+.receipt-or {
+  position: absolute; left: 15px; top: 707px; width: 670px; height: 28px;
+  display: grid; grid-template-columns: 290px 1fr 290px; align-items: center;
+  font-size: var(--fs-label); line-height: 28px; text-transform: uppercase; text-align: center;
+  color: var(--c-ink-disabled);
+}
+.receipt-or span:first-child, .receipt-or span:last-child { height: 1px; background: var(--c-gray-200); }
+
+.cta--dark { left: 10px; background: var(--c-black); color: var(--c-white); }
+.cta--dark:active { background: var(--c-ink-muted); }
+
+/* =====================================================================
+   Ticket overlay (Figma 5987:4788), screen coords
+   ===================================================================== */
+
+.ticket {
+  position: absolute; inset: 0; z-index: 10;
+  background: rgba(0, 0, 0, 0.6);
+}
+.ticket[hidden] { display: none; }
+.ticket__paper { position: absolute; left: 60px; top: 68px; width: 600px; }
+.ticket__edge { display: block; width: 600px; height: 7px; }
+.ticket__body {
+  height: 1263px;
+  padding: 20px 10px;
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--c-white);
+  /* Monaco in Figma (macOS only); Fira Mono is the closest web stand-in */
+  font-family: Monaco, Menlo, "Fira Mono", Consolas, monospace;
+  text-transform: uppercase;
+  color: var(--c-black);
+}
+.ticket__title { margin: 0; padding: 10px 0; font-size: 40px; line-height: 42px; text-align: center; }
+.ticket__icon { height: 64px; display: grid; place-items: center; }
+.ticket__icon img { width: 48px; height: 47px; }
+.ticket__line { margin: 0; font-size: 32px; line-height: 33px; white-space: nowrap; }
+.ticket__space { display: block; height: 5px; flex: none; }
+.ticket__space--big { height: 20px; }
+.ticket__btn {
+  position: absolute; top: 1384px; width: 332px; height: 88px;
+  display: grid; place-items: center;
+  background: var(--c-white);
+  border: 1px solid #c2c3c4; border-radius: 4px;
+}
+.ticket__btn--email { left: 20px; }
+.ticket__btn--print { left: 368px; }
+.ticket__btn img { width: 40px; height: 40px; }
+.ticket__close {
+  position: absolute; left: 20px; top: 1492px; width: 680px; height: 88px;
+  margin: 0; padding: 20px;
+  border: 1px solid #c2c3c4; border-radius: 4px;
+  background: var(--c-ink-muted);
+  font: inherit; font-size: 40px; font-weight: 600; line-height: 48px;
+  text-transform: uppercase; color: var(--c-white);
+  cursor: pointer;
+}
+.ticket__close:active { background: var(--c-black); }
+.ticket__close:focus-visible { outline: 4px solid var(--c-white); outline-offset: -8px; }
