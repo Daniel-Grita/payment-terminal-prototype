@@ -256,6 +256,213 @@
             <!-- The duplicate ticket (Figma 5991:12779) is added by app.js -->
           </section>
 
+          <!-- ================= Daily summary ================= -->
+          <!-- No Figma frames: built from the PayXpress manual's "Total journalier" screens,
+               in this file's components (app bar, panel, chips, day header, bottom sheet). -->
+
+          <!-- D1 · Daily summary (menu › Daily summary) -->
+          <section class="view view--app" data-view="summary" aria-label="Daily summary">
+            <div class="statusbar statusbar--app">
+              <span class="statusbar__time">16:25</span>
+              <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
+            </div>
+            <header class="appbar-app">
+              <button class="appbar-app__btn appbar-app__btn--left" type="button" data-action="open-menu" aria-label="Menu" aria-haspopup="dialog"><img src="assets/icon-burger-48.svg" alt=""></button>
+              <h1 class="appbar-app__title">Daily Summary</h1>
+              <!-- Shown as in the manual; not wired -->
+              <span class="appbar-app__share" aria-hidden="true"><img src="assets/icon-share.svg" alt=""></span>
+            </header>
+
+            <div class="app-panel"></div>
+
+            <!-- Grey card head: the business day on show and its total (as in the manual) -->
+            <div class="ds-head">
+              <p class="ds-head__line" data-ds-period></p>
+              <p class="ds-head__line">Total of transactions: <span data-ds-total></span></p>
+            </div>
+
+            <div class="ds-tabs" role="tablist" aria-label="Summary">
+              <button class="ds-tab" type="button" role="tab" id="dsTabOps" aria-controls="dsPanelOps" aria-selected="true" data-action="summary-tab" data-tab="ops">operations</button>
+              <button class="ds-tab" type="button" role="tab" id="dsTabMethods" aria-controls="dsPanelMethods" aria-selected="false" tabindex="-1" data-action="summary-tab" data-tab="methods">payment methods</button>
+            </div>
+
+            <div class="ds-panel" role="tabpanel" id="dsPanelOps" aria-labelledby="dsTabOps" data-ds-panel="ops"></div>
+            <div class="ds-panel" role="tabpanel" id="dsPanelMethods" aria-labelledby="dsTabMethods" data-ds-panel="methods" hidden></div>
+
+            <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
+          </section>
+
+          <!-- D2 · Settings (menu › Settings) -->
+          <section class="view view--app" data-view="settings" aria-label="Settings">
+            <div class="statusbar statusbar--app">
+              <span class="statusbar__time">16:25</span>
+              <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
+            </div>
+            <header class="appbar-app">
+              <button class="appbar-app__btn appbar-app__btn--left" type="button" data-action="open-menu" aria-label="Menu" aria-haspopup="dialog"><img src="assets/icon-burger-48.svg" alt=""></button>
+              <h1 class="appbar-app__title">Settings</h1>
+            </header>
+
+            <!-- White card inset from the screen sides, as in the manual's Settings screen -->
+            <div class="set-card">
+              <!-- Only Daily summary is wired; the other entries are shown as in the manual -->
+              <ul class="set-list">
+                <li><span class="set-row"><img src="assets/set-initiator.svg" alt=""><span class="set-row__text">Initiator settings</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+                <li><span class="set-row"><img src="assets/set-security.svg" alt=""><span class="set-row__text">Security settings</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+                <li><span class="set-row"><img src="assets/set-sessions.svg" alt=""><span class="set-row__text">Sessions</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+                <li><span class="set-row"><img src="assets/set-concert.svg" alt=""><span class="set-row__text">Concert configuration</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+                <li><span class="set-row"><img src="assets/set-offline.svg" alt=""><span class="set-row__text">Offline mode</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+                <li><span class="set-row"><img src="assets/set-transaction.svg" alt=""><span class="set-row__text">Transaction</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+                <li><button class="set-row" type="button" data-action="open-summary-settings"><img src="assets/set-summary.svg" alt=""><span class="set-row__text">Daily summary</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></button></li>
+                <li><span class="set-row"><img src="assets/set-tip.svg" alt=""><span class="set-row__text">Tip</span><img class="set-row__chev" src="assets/icon-next.svg" alt=""></span></li>
+              </ul>
+            </div>
+
+            <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
+          </section>
+
+          <!-- D3 · Settings › Daily summary: business-day hours -->
+          <section class="view view--app" data-view="summary-settings" aria-label="Daily summary settings">
+            <div class="statusbar statusbar--app">
+              <span class="statusbar__time">16:25</span>
+              <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
+            </div>
+            <header class="appbar-app">
+              <button class="appbar-app__btn appbar-app__btn--left" type="button" data-action="back-to-settings" aria-label="Back"><img src="assets/icon-back.svg" alt=""></button>
+              <h1 class="appbar-app__title">Daily Summary</h1>
+            </header>
+
+            <!-- Flat white page under the app bar, as in the manual (no card, no rounded corners) -->
+            <div class="set-page"></div>
+
+            <div class="set-body">
+              <label class="set-toggle">
+                <span class="set-toggle__text">
+                  <span class="set-toggle__title">Custom start and end time</span>
+                  <span class="set-toggle__hint">Default: from 00:00 to 23:59</span>
+                </span>
+                <input class="switch" type="checkbox" role="switch" data-ds-custom>
+              </label>
+
+              <div class="set-times" data-ds-times hidden>
+                <button class="set-time" type="button" data-action="edit-time" data-which="start">
+                  <span class="set-time__text"><span>Start time</span><span data-time-value="start"></span></span>
+                  <img src="assets/icon-next.svg" alt="">
+                </button>
+                <button class="set-time" type="button" data-action="edit-time" data-which="end">
+                  <span class="set-time__text"><span>End time</span><span data-time-value="end"></span></span>
+                  <img src="assets/icon-next.svg" alt="">
+                </button>
+              </div>
+            </div>
+
+            <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
+
+            <!-- Time dialog over a dimmed screen: type the hour, then the minute
+                 (the focused field is white with a black outline, the other grey) -->
+            <div class="tdialog-layer" data-layer="time" hidden>
+              <div class="tdialog-layer__scrim" data-action="cancel-time"></div>
+              <div class="tdialog" role="dialog" aria-modal="true" aria-labelledby="timeTitle">
+                <h2 class="sr-only" id="timeTitle" data-time-title>Start time</h2>
+                <input class="tdialog__field tdialog__field--h" type="text" inputmode="numeric" maxlength="2" autocomplete="off" spellcheck="false"
+                  role="spinbutton" aria-label="Hour" aria-valuemin="0" aria-valuemax="23" data-unit="h" data-autofocus-time>
+                <span class="tdialog__colon" aria-hidden="true">:</span>
+                <input class="tdialog__field tdialog__field--m" type="text" inputmode="numeric" maxlength="2" autocomplete="off" spellcheck="false"
+                  role="spinbutton" aria-label="Minute" aria-valuemin="0" aria-valuemax="59" data-unit="m">
+                <span class="tdialog__label tdialog__label--h" aria-hidden="true">Hour</span>
+                <span class="tdialog__label tdialog__label--m" aria-hidden="true">Minute</span>
+                <button class="tdialog__btn tdialog__btn--cancel" type="button" data-action="cancel-time">cancel</button>
+                <button class="tdialog__btn tdialog__btn--ok" type="button" data-action="confirm-time">confirm</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ================= File collection's history ================= -->
+          <!-- Figma "PayXpress Compose" › File Collection (section 5991:7592) -->
+
+          <!-- R1 · File collection's history (Figma [List] TLC reports / P3, Frame 11 3951:37356) -->
+          <section class="view view--app" data-view="collections" aria-label="File collection’s history">
+            <div class="statusbar statusbar--app">
+              <span class="statusbar__time">16:25</span>
+              <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
+            </div>
+            <header class="appbar-app">
+              <button class="appbar-app__btn appbar-app__btn--left" type="button" data-action="open-menu" aria-label="Menu" aria-haspopup="dialog"><img src="assets/icon-burger-48.svg" alt=""></button>
+              <h1 class="appbar-app__title">File Collection’s History</h1>
+              <!-- Upload: sends the file collections now (Frame 4 dialog); a spinner while it runs (Frame 8) -->
+              <button class="appbar-app__btn appbar-app__btn--filter" type="button" data-action="open-send" aria-label="Send file collections" aria-haspopup="dialog" data-coll-upload><img src="assets/icon-upload.svg" alt=""></button>
+              <svg class="coll-spinner coll-spinner--bar" viewBox="0 0 43 43" aria-hidden="true"><circle cx="21.5" cy="21.5" r="19" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="89.5 120"/></svg>
+            </header>
+
+            <div class="app-panel coll-panel"></div>
+
+            <div class="coll-list" data-coll-list>
+              <p class="coll-intro">All file collection history reports<br>from the last 7 days until today</p>
+              <div data-coll-days></div>
+            </div>
+
+            <!-- Loading (Frame 6 / Frame 52): grey placeholders and a spinner -->
+            <div class="coll-skeleton" data-coll-skeleton hidden aria-hidden="true">
+              <span style="top:222px;height:230px"></span><span style="top:468px;height:75px"></span>
+              <span style="top:559px;height:230px"></span><span style="top:805px;height:75px"></span>
+              <span style="top:896px;height:230px"></span><span style="top:1142px;height:75px"></span>
+              <span style="top:1233px;height:230px"></span><span style="top:1479px;height:75px"></span>
+              <i class="coll-skeleton__disc"><svg class="coll-spinner coll-spinner--disc" viewBox="0 0 43 43" aria-hidden="true"><circle cx="21.5" cy="21.5" r="19" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="89.5 120"/></svg></i>
+            </div>
+
+            <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
+
+            <!-- Send now? (Frame 53 dim + Frame 4 dialog, centred) -->
+            <div class="cdialog-layer" data-layer="send" hidden>
+              <div class="cdialog-layer__dim" data-action="cancel-send"></div>
+              <div class="cdialog" role="dialog" aria-modal="true" aria-labelledby="sendTitle" aria-describedby="sendText">
+                <h2 class="cdialog__title" id="sendTitle">File collection’s reports</h2>
+                <p class="cdialog__text" id="sendText">You are going to trigger file collection’s sending on all your active contracts.<br><br>Do you confirm ?</p>
+                <div class="cdialog__actions">
+                  <button class="cdialog__btn cdialog__btn--muted" type="button" data-action="cancel-send">cancel</button>
+                  <button class="cdialog__btn" type="button" data-action="confirm-send">send</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- R2 · Report ticket (Frame 54 dim + Frame 55 P3 / [Ticket] Session report) -->
+            <div class="cticket" data-layer="cticket" role="dialog" aria-modal="true" aria-label="File collection report" hidden>
+              <div class="cticket__dim"></div>
+              <div class="cticket__paper">
+                <img class="cticket__edge" src="assets/ticket-edge-top.svg" alt="">
+                <div class="cticket__body" data-cticket-body></div>
+                <img class="cticket__edge" src="assets/ticket-edge-bottom.svg" alt="">
+              </div>
+              <button class="cticket__btn cticket__btn--email" type="button" data-action="open-mail" aria-label="Send this report by email" aria-haspopup="dialog"><img src="assets/icon-email.svg" alt=""></button>
+              <!-- Print: shown as designed; not wired in Figma -->
+              <div class="cticket__btn cticket__btn--print" aria-hidden="true"><img src="assets/icon-printer.svg" alt=""></div>
+              <button class="cticket__close" type="button" data-action="close-cticket">close</button>
+            </div>
+
+            <!-- Email the report (Frame 56 dim + Frames 43–47): enter → sending → sent -->
+            <div class="cdialog-layer" data-layer="mail" hidden>
+              <div class="cdialog-layer__dim" data-action="dim-mail"></div>
+              <div class="cdialog" role="dialog" aria-modal="true" aria-labelledby="mailTitle" data-mail-state="enter">
+                <div class="cdialog__head">
+                  <h2 class="cdialog__title" id="mailTitle" data-mail-title>Please enter your email</h2>
+                  <svg class="coll-spinner coll-spinner--dialog" viewBox="0 0 43 43" aria-hidden="true"><circle cx="21.5" cy="21.5" r="19" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="89.5 120"/></svg>
+                </div>
+                <label class="cdialog__field" data-mail-only="enter">
+                  <img src="assets/icon-email.svg" alt="">
+                  <input type="email" placeholder="Please enter your email" autocomplete="off" spellcheck="false" aria-label="Email" data-mail-input>
+                </label>
+                <p class="cdialog__text" data-mail-only="sending">Electronic ticket sending in progress ...</p>
+                <p class="cdialog__text" data-mail-only="sent" role="status">Ticket has been sent</p>
+                <div class="cdialog__actions">
+                  <button class="cdialog__btn cdialog__btn--muted" type="button" data-action="cancel-mail" data-mail-only="enter">cancel</button>
+                  <button class="cdialog__btn" type="button" data-action="validate-mail" data-mail-only="enter">validate</button>
+                  <span class="cdialog__btn cdialog__btn--muted" data-mail-only="sending" aria-hidden="true">ok</span>
+                  <button class="cdialog__btn" type="button" data-action="mail-ok" data-mail-only="sent">ok</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <!-- H1 · Side menu (Figma B.Menu 5991:10440 / 5991:10458), opened from ☰ -->
           <div class="drawer" id="drawer" hidden>
             <div class="drawer__scrim" data-action="close-menu"></div>
@@ -266,10 +473,10 @@
               <ul class="menu__list">
                 <li><button class="menu__item" type="button" data-action="menu-go" data-target="amount-entry"><img src="assets/menu-charge.svg" alt=""><span>Charge</span></button></li>
                 <li><button class="menu__item" type="button" data-action="menu-go" data-target="journal"><img src="assets/menu-history.svg" alt=""><span>Transaction’s history</span></button></li>
+                <li><button class="menu__item" type="button" data-action="menu-go" data-target="summary"><img src="assets/menu-summary.svg" alt=""><span>Daily summary</span></button></li>
+                <li><button class="menu__item" type="button" data-action="menu-go" data-target="collections"><img src="assets/menu-files.svg" alt=""><span>File collection’s history</span></button></li>
+                <li><button class="menu__item" type="button" data-action="menu-go" data-target="settings"><img src="assets/menu-settings.svg" alt=""><span>Settings</span></button></li>
                 <!-- Shown as designed; not wired in Figma -->
-                <li><span class="menu__item"><img src="assets/menu-summary.svg" alt=""><span>Daily summary</span></span></li>
-                <li><span class="menu__item"><img src="assets/menu-files.svg" alt=""><span>File collection’s history</span></span></li>
-                <li><span class="menu__item"><img src="assets/menu-settings.svg" alt=""><span>Settings</span></span></li>
                 <li><span class="menu__item"><img src="assets/menu-support.svg" alt=""><span>Support</span></span></li>
                 <li><span class="menu__item"><img src="assets/menu-about.svg" alt=""><span>About</span></span></li>
               </ul>
