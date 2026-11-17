@@ -33,7 +33,12 @@
   // The stage menu's Interface switch sets <html data-ui="old">; then the end of the payment
   // shows the old software's screens instead of the new ones.
   var OLD_UI_SCREENS = { "approved": "approved-old", "receipt": "receipt-old" };
+  // Stage menu › Upcoming features › Alipay QR payments swaps Present Card for the version
+  // with an Alipay QR option (Figma "Payment Flow QR Code Alipay", 5987:4877). The old
+  // software has no Alipay screens, so an Alipay sale always ends on the new ones.
   function resolveScreen(id) {
+    if (id === "present-card" && flags["alipay-qr"]) return "present-card-qr";
+    if (payMethod === "alipay") return id;
     return document.documentElement.getAttribute("data-ui") === "old" && OLD_UI_SCREENS[id] || id;
   }
   var OLD_ANNOUNCE = {
@@ -45,6 +50,9 @@
   var TXN_SCREENS = {
     "please-wait":   { body: "loading", prompt: "please wait",                    announce: "Please wait" },
     "present-card":  { body: "card",    prompt: "Insert, swipe or tap<br>your card", announce: "Insert, swipe or tap your card", leds: true },
+    // Alternative payments (Figma 5991:16356, 6021:9872), in English. Only Alipay is accepted.
+    "present-card-qr": { body: "card-qr", prompt: "Insert, swipe or tap<br>your card", announce: "Insert, swipe or tap your card, or pay by QR code with Alipay", leds: true },
+    "alipay-qr":     { body: "alipay",                                            announce: "Alipay. The customer scans the QR code to pay", leds: true },
     "card-read":     { body: "loading", prompt: "card read",                      announce: "Card read" },
     "please-wait-2": { body: "loading", prompt: "please wait",                    announce: "Please wait" },
     "authorization": { body: "loading", prompt: "Authorization<br>Please wait",   announce: "Authorization, please wait", scheme: "CB" },
@@ -65,13 +73,14 @@
   function txnTemplate(id, cfg) {
     var meta =
       '<span class="txn-debit">debit</span>' +
-      (cfg.scheme ? '<span class="txn-scheme">' + cfg.scheme + "</span>" : "") +
+      // Card sales show CB; Alipay sales show Alipay+ (Figma 5987:6201). #screen[data-method] picks one.
+      (cfg.scheme ? '<span class="txn-scheme"><span data-method-only="card">' + cfg.scheme + '</span><span data-method-only="alipay">Alipay+</span></span>' : "") +
       (cfg.date ? '<span class="txn-date">05/08/26 at 12:13:44</span>' : "");
 
     var thirdRow = cfg.leds
       ? '<div class="leds" aria-hidden="true"><span class="led led--on"></span><span class="led"></span><span class="led"></span><span class="led"></span></div>'
       : cfg.date
-        ? '<img class="txn-cb" src="assets/cb-small.svg" alt="">'
+        ? '<img class="txn-cb" src="assets/cb-small.svg" alt="" data-method-only="card">'
         : "";
 
     var body = "";
@@ -83,7 +92,7 @@
         '  <source srcset="assets/loader-still.webp" media="(prefers-reduced-motion: reduce)">' +
         '  <img src="assets/loader.webp" alt="">' +
         "</picture>";
-    } else if (cfg.body === "card") {
+    } else if (cfg.body === "card" || cfg.body === "card-qr") {
       body =
         '<p class="panel__prompt panel__prompt--muted">' + cfg.prompt + "</p>" +
         '<img class="schemes" src="assets/card-schemes@2x.webp" alt="CB, Visa, Mastercard, American Express, Diners Club, Discover, UnionPay, JCB">' +
@@ -92,9 +101,28 @@
         '  <source srcset="assets/present-card-still.webp" media="(prefers-reduced-motion: reduce)">' +
         '  <img src="assets/present-card.webp" alt="">' +
         "</picture>" +
+        // Alternative payments: a QR option below the card art (Figma 5991:16356). Only Alipay
+        // is accepted; WeChat Pay is shown as in Figma but tapping it does nothing.
+        (cfg.body === "card-qr"
+          ? '<div class="receipt-or qr-or" aria-hidden="true"><span></span><span>or</span><span></span></div>' +
+            '<p class="qr-label">Pay by QR code</p>' +
+            '<button class="qr-method qr-method--alipay" type="button" data-action="pay-alipay"><img src="assets/alipay-logo@2x.png" alt="Pay with Alipay"></button>' +
+            '<div class="qr-method qr-method--wechat" aria-hidden="true"><img src="assets/wechat-pay-logo@2x.png" alt=""></div>' +
+            '<span class="qr-divider" aria-hidden="true"></span>'
+          : "") +
         '<button class="cta" type="button" data-action="cancel-transaction">cancel transaction</button>' +
         // Clicking anywhere on the screen stands in for tapping the card; this is the keyboard route.
         '<button class="sr-only" type="button" data-action="card-tapped" data-autofocus>Tap card</button>';
+    } else if (cfg.body === "alipay") {
+      // Merchant-presented QR code (Figma 6021:9872). The QR is traced from Figma's reference
+      // image so it stays sharp; clicking the screen stands in for the customer scanning it.
+      body =
+        '<img class="alipay-logo" src="assets/alipay-logo@2x.png" alt="Alipay">' +
+        '<img class="alipay-qr" src="assets/alipay-qr.svg" alt="QR code to scan with the Alipay app">' +
+        // "Scanner depuis l’acheteur": scan the customer’s code instead. Not wired in Figma.
+        '<div class="cta cta--neutral" aria-hidden="true">scan customer’s QR code</div>' +
+        '<button class="cta" type="button" data-action="cancel-transaction">cancel transaction</button>' +
+        '<button class="sr-only" type="button" data-action="qr-scanned" data-autofocus>Customer scans the QR code</button>';
     } else if (cfg.body === "approved") {
       body =
         // Plays once from "Payment animation 2.mp4" each time Approved appears (see replayBanner).
@@ -102,7 +130,7 @@
         '  <source srcset="assets/approved-banner-still.webp" media="(prefers-reduced-motion: reduce)">' +
         '  <img src="assets/approved-banner.webp" alt="Approved. Payment accepted" data-replay>' +
         "</picture>" +
-        '<img class="cb-logo" src="assets/cb-logo@2x.webp" alt="CB">';
+        '<img class="cb-logo" src="assets/cb-logo@2x.webp" alt="CB" data-method-only="card">';   // Alipay: no logo (Figma 5987:6218)
     } else if (cfg.body === "receipt") {
       body =
         '<img class="banner" src="assets/approved-banner-still.webp" alt="Approved. Payment accepted">' +
@@ -122,7 +150,7 @@
     var overlay = cfg.body === "receipt" ? ticketTemplate() : "";
 
     return (
-      '<section class="view view--txn' + (cfg.body === "approved" ? " view--approved" : "") + (cfg.body === "card" ? " view--card" : "") + '" data-view="' + id + '">' +
+      '<section class="view view--txn' + (cfg.body === "approved" ? " view--approved" : "") + (cfg.body === "card" || cfg.body === "card-qr" ? " view--card" : "") + (cfg.body === "alipay" ? " view--qr" : "") + '" data-view="' + id + '">' +
       '  <div class="statusbar statusbar--muted">' +
       '    <span class="statusbar__time">16:25</span>' +
       '    <img class="statusbar__icons" src="assets/status-icons-muted.svg" alt="">' +
@@ -177,7 +205,8 @@
       '      <p class="ticket__title">bank card</p>' +
       '      <div class="ticket__icon"><img src="assets/icon-contactless.svg" alt=""></div>' +
       big + line("contactless") + line("A0000000041010") + space +
-      line("debit mastercard") + line("18/11/25 - 17:12:50") + space +
+      // Reads ALIPAY+ for an Alipay payment (Figma 5987:4788), on the sale's ticket and on its duplicate.
+      line('<span data-method-only="card">debit mastercard</span><span data-method-only="alipay">alipay+</span>') + line("18/11/25 - 17:12:50") + space +
       line("payxpert france 69") + line("lyon") + big + big +
       line("0001695") + space + line("16808") + line("54003281000041") + space +
       line("XXXXXXXXXXXX4751") + line("D2429E7B493D9005") + space +
@@ -307,6 +336,18 @@
   var holdTimer = null;
   var z = 1;
 
+  // How the sale on show is being paid: "card" or "alipay". Each payment screen carries it as
+  // data-method, which picks between its [data-method-only] variants (styles.css). Details
+  // carries the method of the transaction it shows instead (see openDetails).
+  var payMethod = "card";
+  var enteredAt = 0;   // when the screen on show appeared
+  function setMethod(m) {
+    payMethod = m;
+    Object.keys(views).forEach(function (id) {
+      if (id !== "details") views[id].setAttribute("data-method", m);
+    });
+  }
+
   function announce(text) {
     announcer.textContent = "";
     // next frame so repeated text is still announced
@@ -322,6 +363,7 @@
 
     clearTimeout(holdTimer);
     current = id;
+    enteredAt = performance.now();
 
     to.style.zIndex = String(++z);
     to.classList.add("is-active");
@@ -469,12 +511,13 @@
       time: pad(now.getHours()) + ":" + pad(now.getMinutes()),
       cents: parseInt(digits || "0", 10),
       status: "accepted",
+      method: payMethod,
       date: pad(now.getDate()) + "/" + pad(now.getMonth() + 1) + "/" + now.getFullYear() +
         " at " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds())
     });
     journalDirty = true;
     // …and counts in the daily summary of the business day it falls in.
-    summaryTxns.push({ ts: now, kind: "debit", cents: parseInt(digits || "0", 10), tip: 0, scheme: "cb", mode: "quick", status: "accepted" });   // keyed in on the terminal
+    summaryTxns.push({ ts: now, kind: "debit", cents: parseInt(digits || "0", 10), tip: 0, scheme: payMethod === "alipay" ? "alipay" : "cb", mode: "quick", status: "accepted" });   // keyed in on the terminal
   }
 
   /* ---- Filters: each group holds one value or none ("ALL") ---- */
@@ -487,7 +530,7 @@
   function matches(t, f) {
     if (f.type && f.type !== "debit") return false;
     if (f.status && f.status !== t.status) return false;
-    if (f.scheme && f.scheme.indexOf("cb") !== 0) return false;
+    if (f.scheme && (f.scheme.indexOf("cb") !== 0 || t.method === "alipay")) return false;
     if (f.collection === "not-collected") return false;
     return true;
   }
@@ -521,13 +564,16 @@
 
   function rowHtml(t) {
     var label = t.status === "accepted" ? "Debit accepted" : "Debit declined";
+    var alipay = t.method === "alipay";
     return (
       '<button class="txn" type="button" data-action="open-details" data-id="' + t.id + '"' +
-      ' aria-label="' + t.time + ", card ending 6666, " + label + ", " + euros(t.cents) + '">' +
+      ' aria-label="' + t.time + (alipay ? ", Alipay+, " : ", card ending 6666, ") + label + ", " + euros(t.cents) + '">' +
       '<span class="txn__time"><span>' + t.time + '</span><img src="assets/icon-history.svg" alt="" width="32" height="32"></span>' +
       '<span class="txn__sep"></span>' +
       '<span class="txn__info">' +
-      '<span class="txn__pan">∗∗∗∗ 6666<img src="assets/cb-small.svg" alt="" width="36" height="25"></span>' +
+      (alipay
+        ? '<span class="txn__pan"><img src="assets/alipay-logo@2x.png" alt="" width="86" height="25"></span>'
+        : '<span class="txn__pan">∗∗∗∗ 6666<img src="assets/cb-small.svg" alt="" width="36" height="25"></span>') +
       '<span class="txn__status"><img src="assets/status-' + t.status + '.svg" alt="" width="32" height="32">' + label + "</span>" +
       "</span>" +
       '<span class="txn__amount">' + euros(t.cents) + "</span>" +
@@ -718,6 +764,7 @@
     if (!t) return;
     detailTxn = t;
     var d = views["details"];
+    d.setAttribute("data-method", t.method || "card");   // card or Alipay+ line, and the duplicate ticket
     var amount = fmt.format(t.cents / 100);
     d.querySelector("[data-detail='amount']").textContent = amount;
     d.querySelector("[data-detail='date']").textContent = t.date;
@@ -900,15 +947,21 @@
       { id: "conecs", name: "Conecs", logo: "assets/scheme-conecs.svg", w: 44, h: 19 }
     ] },
     { id: "qr", name: "QR codes", schemes: [
-      { id: "qr-cb", name: "CB", logo: "assets/cb-small.svg", w: 44, h: 30 }
+      { id: "qr-cb", name: "CB", logo: "assets/cb-small.svg", w: 44, h: 30 },
+      // Only listed once an Alipay sale has been made in the prototype (empty rows are skipped).
+      { id: "alipay", name: "Alipay+", logo: "assets/alipay-logo@2x.png", w: 69, h: 20 }
     ] }
   ];
   var collapsedGroups = {};
 
   // Upcoming features, switched from the stage menu (☰, top-left of the page) and remembered per browser.
   var FLAGS_KEY = "payment-terminal:feature-flags";
-  var flags = { "ecr-modes": false };
-  try { var savedFlags = JSON.parse(localStorage.getItem(FLAGS_KEY) || "{}"); if (savedFlags && savedFlags["ecr-modes"] === true) flags["ecr-modes"] = true; } catch (e) { /* storage blocked */ }
+  // "alipay-qr" takes effect from the next Present Card (see resolveScreen).
+  var flags = { "ecr-modes": false, "alipay-qr": false };
+  try {
+    var savedFlags = JSON.parse(localStorage.getItem(FLAGS_KEY) || "{}");
+    Object.keys(flags).forEach(function (k) { if (savedFlags && savedFlags[k] === true) flags[k] = true; });
+  } catch (e) { /* storage blocked */ }
 
   // "10 Nov 2026 17:00" (Figma: "16 jan 2025 16:00")
   var periodFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -1569,6 +1622,7 @@
       digits = "";
     } else if (key === "ok") {
       if (!digits) { shakeAmount(); return; }     // brief D5
+      setMethod("card");
       go("please-wait", DISSOLVE_300);
       return;
     }
@@ -1586,10 +1640,24 @@
     if (handleSummaryClick(action, actionEl)) return;
     if (handleCollectionsClick(action, actionEl)) return;
 
-    if (current === "present-card") {
+    if (current === "present-card" || current === "present-card-qr") {
       if (action === "cancel-transaction") { newSale(); return; }   // brief D2: cancel resets the sale
+      // Not wired in Figma: the Alipay button opens its QR code.
+      if (action === "pay-alipay") { setMethod("alipay"); go("alipay-qr", DISSOLVE_300); return; }
+      // WeChat Pay is not accepted: its button does nothing (and doesn't count as a card tap).
+      if (e.target.closest(".qr-method--wechat")) return;
       // Any other click on Present Card = the customer taps their card.
       if (e.target.closest(".view--card")) go("card-read", CARD_TAPPED);
+      return;
+    }
+
+    if (current === "alipay-qr") {
+      if (action === "cancel-transaction") { newSale(); return; }
+      // Any click outside the buttons = the customer scans the code with their phone; then the
+      // sale runs on as in Figma: Please wait 0.8 s → Authorization 2 s → Approved → Receipt.
+      // Clicks in the first 500 ms are the tail of the Alipay tap (a double-click), not a scan.
+      if (performance.now() - enteredAt < 500) return;
+      if (!e.target.closest(".cta")) go("please-wait-2", DISSOLVE_300);
       return;
     }
 
@@ -1606,6 +1674,8 @@
 
   renderAmount();
   renderBadge();
+  setMethod("card");
+  views["details"].setAttribute("data-method", "card");
   go("amount-entry", INSTANT);
 
   // Debug hook for review tooling: window.__terminal.go('approved')

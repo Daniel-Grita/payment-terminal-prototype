@@ -121,6 +121,7 @@ img { display: block; }
 .stage-menu__switch input:checked { background: #1c1c1e; }
 .stage-menu__switch input:checked::after { transform: translateX(16px); }
 .stage-menu__switch input:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
+.stage-menu__switch + .stage-menu__switch { margin-top: 12px; }
 
 .stage {
   height: 100%;
@@ -425,6 +426,48 @@ img { display: block; }
 }
 /* Present Card: clicking the screen stands in for tapping the card. */
 .view--card { cursor: pointer; }
+
+/* ---------- Alternative payments: Alipay QR (Figma 5987:4877), panel coords ---------- */
+
+/* Card sale or Alipay sale: a screen's data-method shows one of each pair. */
+[data-method="card"] [data-method-only="alipay"],
+[data-method="alipay"] [data-method-only="card"] { display: none; }
+.details__alipay { width: 124px; height: 36px; }
+
+/* Present Card with QR option (5991:16356) */
+.receipt-or.qr-or { left: 20px; top: 809px; }
+.qr-label {
+  position: absolute; left: 0; right: 0; top: 856px; margin: 0;
+  font-size: var(--fs-prompt); line-height: 28px; text-align: center; text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+/* Alipay and WeChat Pay side by side, 338 × 100 each, logos at Figma's size. Only Alipay is
+   accepted: WeChat Pay is shown but inert. */
+.qr-method {
+  position: absolute; top: 908px;
+  width: 338px; height: 100px;
+  appearance: none; border: 0; margin: 0; padding: 0;
+  border-radius: var(--r-key);
+  background: var(--c-gray-50);
+  box-shadow: var(--shadow-key);
+  display: grid; place-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.qr-method--alipay { left: 11px; }
+.qr-method--alipay img { display: block; width: 185px; height: 54px; }
+.qr-method--alipay:active { background: var(--c-gray-200); }
+.qr-method--alipay:focus-visible { outline: 4px solid var(--c-black); outline-offset: 3px; }
+.qr-method--wechat { left: 364px; cursor: default; }
+.qr-method--wechat img { display: block; width: 191px; height: 56px; }
+.qr-divider { position: absolute; left: 11px; top: 1036px; width: 690px; height: 1px; background: var(--c-gray-200); }
+
+/* Alipay QR (6021:9872). The code is drawn on its modules, inside Figma's 550 × 550 box. */
+.view--qr { cursor: pointer; }
+.alipay-logo { position: absolute; left: 216px; top: 72px; width: 278px; height: 81px; }
+.alipay-qr { position: absolute; left: 126px; top: 294px; width: 459px; height: 459px; }
+.cta--neutral { top: 968px; color: var(--c-ink-muted); cursor: default; }
+.cta--neutral:active { background: var(--c-gray-50); }
 
 /* =====================================================================
    S8 · Receipt / Cardholder / Approved (Figma 5987:6264), panel coords

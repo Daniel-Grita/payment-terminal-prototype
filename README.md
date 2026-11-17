@@ -45,6 +45,18 @@ Everything starts from the amount-entry screen: ✓ runs a payment, ☰ opens th
 | 8 | Cardholder receipt | **View receipt** opens the ticket · **Skip** starts a new sale |
 | 9 | Ticket (overlay) | **Close** returns to 8 |
 
+**Alternative payments (Alipay QR)** — stage menu › Upcoming features › **Alipay QR payments**
+(Figma › Payment Flow QR Code Alipay, 5987:4877; copy translated to English). Only Alipay is accepted: WeChat Pay is shown, as in Figma, but tapping it does nothing.
+With the switch on, screen 3 becomes Present card with a **Pay by QR code** option:
+
+| # | Screen | Moves on |
+|---|---|---|
+| 3 | Present card + QR | **Alipay** opens 3a · **WeChat Pay** does nothing · click elsewhere taps the card (card flow as above) · **Cancel transaction** returns to 1 |
+| 3a | Alipay QR code | **click the screen** = the customer scans it (dissolve 300 ms) · **Cancel transaction** returns to 1 · **Scan customer's QR code** is shown, not wired |
+| 5–9 | Please wait → Authorization → Approved → Receipt → Ticket | as above, but Authorization shows ALIPAY+, Approved and Receipt have no CB mark, and the ticket reads ALIPAY+ |
+
+An Alipay sale always ends on the new screens, even with the Old interface (it has no Alipay screens), and counts under QR codes › Alipay+ in the daily summary.
+
 **Keypad:** digits fill from the cents (5 → 0,05 → 0,50 → 5,00 €), ← deletes, ✕ clears,
 ✓ at 0,00 € shakes the amount. Maximum 99 999,99 €.
 
