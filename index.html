@@ -34,6 +34,10 @@
           <span>ECR &amp; Quick mode</span>
           <input type="checkbox" role="switch" data-flag="ecr-modes">
         </label>
+        <label class="stage-menu__switch">
+          <span>Alipay QR payments</span>
+          <input type="checkbox" role="switch" data-flag="alipay-qr">
+        </label>
       </fieldset>
       <fieldset class="stage-menu__group">
         <legend class="stage-menu__title">Background</legend>
@@ -232,7 +236,7 @@
 
             <div class="app-panel details">
               <div class="details__card">
-                <p class="details__pan">∗∗∗∗ 6666<img src="assets/cb-small.svg" alt="CB" width="52" height="36"></p>
+                <p class="details__pan"><span data-method-only="card">∗∗∗∗ 6666</span><img src="assets/cb-small.svg" alt="CB" width="52" height="36" data-method-only="card"><img class="details__alipay" src="assets/alipay-logo@2x.png" alt="Alipay+" width="124" height="36" data-method-only="alipay"></p>
                 <p class="details__value"><span data-detail="amount">15,00</span> €</p>
               </div>
               <div class="details__row"><p class="details__label">Operation date</p><p class="details__value" data-detail="date">10/11/2025 at 17:12:04</p></div>
