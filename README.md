@@ -103,6 +103,23 @@ their business day has ended. The hours reset when the page reloads.
 
 The reports are the Figma frames' sample data; the prototype's "today" is 02/09/2026, as in Figma.
 
+### Pay by Link
+
+Stage menu › Upcoming features › **Pay by Link** adds the entry to the side menu, under Charge
+(Figma › Pay by Link, 6481:33361). The merchant sends the client a payment link by email
+instead of taking a card.
+
+| # | Screen | Moves on |
+|---|---|---|
+| L1 | Pay by Link | **Start a new payment** slides in L2 · the search field filters by client's email · a day header collapses its rows · a row slides in L4 (a link still being created is greyed out and can't be opened) |
+| L2 | New payment link (1/2) | **Communication language** opens a sheet listing 19 languages (it scrolls; the chosen one is ticked, Cancel, Esc or a tap outside closes it) · **Next** checks the fields, then shows L3 · a missing or invalid required field turns red with its message · **←** back to L1 |
+| L3 | New payment link (2/2) | **Send link** checks first and last name, then shows "Confirmation" · **OK** slides L3 away to L1, where the new link is on top as "Creation in progress" · **←** back to L2 |
+| L4 | Pay by Link details | the **QR** icon by the URL opens "Scan the QR code" (**OK**, Esc or a tap outside closes it) · **Payment attempts** collapses · **←** back to L1 |
+
+The form starts filled with Figma's example (Sherlock Holmes, order ORD-39858-GH) so it can be
+clicked straight through; clear Order ID to see the error state. Sample links are dated
+yesterday; their payment attempts are shown, not wired.
+
 ## Stage menu (for recording)
 
 The ☰ in the window's top-left corner, outside the terminal, opens the stage settings.
@@ -136,6 +153,6 @@ it back. Esc or a click outside closes the panel.
 
 - Lato (regular, italic, semibold, bold, heavy) and Roboto load from CDNs, so the prototype needs an internet connection to render with the right type.
 - Tickets are set in Monaco in Figma (macOS only); elsewhere they fall back to Fira Mono.
-- Animations are lossless animated WebPs made from the designer's MP4s: `assets/loader.webp` (Please wait, Card read, Authorization) and `assets/present-card.webp` (Present card) loop; `assets/approved-banner.webp` plays once each time Approved appears. With reduced motion on, a still frame shows instead.
+- Animations are animated WebPs made from the designer's files: `assets/loader.webp` (Please wait, Card read, Authorization; lossless, from an MP4) and `assets/present-card.webp` (Present card; the tap-to-pay GIF, lossy, flattened on the white panel) loop; `assets/approved-banner.webp` (lossless, from an MP4) plays once each time Approved appears. With reduced motion on, a still frame shows instead.
 - Keyboard: Tab moves through the controls and stays inside an open menu, sheet, dialog or ticket; Esc closes it. On Present card, focus lands on a hidden "Tap card" button, so Enter taps the card.
 - Shown but not wired: the ⇄ icon and DEBIT / WITH TIPS chips on the keypad, the history's date-range chips and chart button, the daily summary's share icon, the settings other than Daily summary, and Support and About in the menu. Not covered: declined payments, tips and PIN entry.

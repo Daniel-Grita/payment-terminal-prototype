@@ -49,6 +49,7 @@
   --c-valid-bg: #bcdf82;          /* also LED on, approved banner, check disc */
   --c-valid-ink: #4b5934;         /* icon at 60%, LED stroke, approved text */
   --c-danger: #ec0000;            /* CANCEL TRANSACTION label */
+  --c-error: #e25555;             /* form field error: outline, label, message (Figma 6481:35490) */
 
   /* ---- Colour: Old UI (sampled from screenshots of the previous software) ---- */
   --c-old-green: #6f9a2b;         /* DÉBIT, PAIEMENT ACCEPTE, check, print button */
