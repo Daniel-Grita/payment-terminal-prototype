@@ -388,10 +388,11 @@ img { display: block; }
 /* ---------- Present Card ---------- */
 
 .schemes { position: absolute; left: 21px; top: 145px; width: 679px; height: 55px; }
-/* "POS Animation.mp4" cropped to its moving content and scaled 1.056× so the terminal
-   drawing matches the size and top-left of Figma's 548 × 548 art box at panel (81, 249). */
-.terminal-art { position: absolute; left: 137px; top: 261px; width: 528px; height: 436px; }
-.terminal-art img { display: block; width: 528px; height: 436px; }
+/* Tap-to-pay GIF (1200 × 1200, card + contactless waves) cropped to its moving content and
+   scaled 0.495× so the terminal drawing keeps the size and top-left of the previous art,
+   which matched Figma's 548 × 548 art box at panel (81, 249). */
+.terminal-art { position: absolute; left: 134px; top: 206px; width: 463px; height: 492px; }
+.terminal-art img { display: block; width: 463px; height: 492px; }
 .cta {
   position: absolute; left: 11px; top: 1064px;
   width: 690px; height: 72px;
@@ -1296,3 +1297,147 @@ span.cdialog__btn { cursor: default; }
 .cticket__close:active { background: var(--c-ink-muted); }
 .cticket__btn:focus-visible { outline: 4px solid var(--c-white); outline-offset: 3px; }
 .cticket__close:focus-visible { outline: 4px solid var(--c-white); outline-offset: -8px; }
+
+/* =====================================================================
+   Pay by Link. Figma "PayXpress Compose" › Pay by Link (section 6481:33361).
+   Screen coords.
+   ===================================================================== */
+
+/* "start a new payment" / "next" / "send link": the sheets' black button (.bsheet__btn--primary), 680 wide */
+.pl-start, .pl-form__btn { position: absolute; left: 20px; width: 680px; }
+
+/* ---------- L1 · List (6481:35607) ---------- */
+
+.pl-start { top: 149px; }
+/* The dialogs' outlined field (.cdialog__field), full width */
+.pl-search { position: absolute; left: 20px; top: 236px; width: 680px; }
+.pl-search input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.pl-search:focus-within { border-color: var(--c-black); box-shadow: inset 0 0 0 1px var(--c-black); }
+
+.pl-list { top: 334px; height: 1188px; }
+/* Rows are 91 px here (Transaction history's are 99): the time has no icon under it */
+.txn--pl { height: 91px; }
+.txn--pl .txn__sep { height: 60px; }
+.txn--pl .txn__status img { object-fit: contain; }
+/* A link still being created is greyed out and can't be opened yet (also .txn--static) */
+.txn--pl.is-pending > * { opacity: 0.3; }
+
+/* ---------- L2 / L3 · New payment link (6481:35474 → 6481:35560) ---------- */
+
+.pl-form { position: absolute; inset: 0; pointer-events: none; }
+.pl-form > * { pointer-events: auto; }
+.pl-form__fields {
+  position: absolute; left: 5px; top: 137px; width: 710px; height: 1227px;
+  display: flex; flex-direction: column; gap: 15px; padding: 15px;
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+}
+.pl-form__fields::-webkit-scrollbar { display: none; }
+.pl-form__fields > div { display: contents; }
+.pl-form__title { flex: none; margin: 0; font-size: 26px; line-height: 31px; font-weight: 700; color: var(--c-black); }
+.pl-form__title--more { margin-top: 15px; }
+.pl-form__hint { flex: none; font-size: 20px; line-height: 24px; color: var(--c-black); }
+.pl-form__note {
+  position: absolute; left: 20px; top: 1364px; width: 680px; padding: 15px;
+  font-size: 24px; line-height: 29px; text-align: center; color: var(--c-black);
+}
+.pl-form__btn { top: 1430px; }
+
+/* Outlined field: the label sits on the 83 px box's top edge, on a white chip */
+.pl-field { position: relative; flex: none; padding-top: 22px; }
+.pl-field__box {
+  position: relative; height: 83px;
+  border: 1px solid var(--c-gray-200); border-radius: 10px;
+}
+.pl-field__input {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  appearance: none; margin: 0; padding: 0 22px; border: 0; outline: none; background: none;
+  border-radius: 10px;
+  font: inherit; font-size: 26px; line-height: 31px; color: var(--c-black);
+}
+.pl-field__input::placeholder { color: var(--c-ink-disabled); opacity: 1; }
+button.pl-field__input { padding-right: 70px; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button.pl-field__input:active { background: var(--c-gray-50); }
+/* A chevron so the language reads as a choice (not in Figma) */
+.pl-field__chev { position: absolute; right: 22px; top: 25px; width: 32px; height: 32px; pointer-events: none; }
+.pl-field__label {
+  position: absolute; left: 15px; top: 0; padding: 5px 10px;
+  background: var(--c-white);
+  font-size: 24px; line-height: 29px; color: var(--c-black);
+  cursor: pointer;
+}
+.view--app .pl-field__msg { margin-top: 8px; padding: 0 15px; font-size: 20px; line-height: 24px; color: var(--c-black); }
+.pl-field__msg:empty { display: none; }
+.pl-field:focus-within .pl-field__box { border-color: var(--c-black); box-shadow: inset 0 0 0 1px var(--c-black); }
+.pl-field.is-invalid .pl-field__box { border-color: var(--c-error); }
+.pl-field.is-invalid:focus-within .pl-field__box { box-shadow: inset 0 0 0 1px var(--c-error); }
+.pl-field.is-invalid .pl-field__label,
+.view--app .pl-field.is-invalid .pl-field__msg { color: var(--c-error); }
+
+/* ---------- L4 · Details (6481:35584) ---------- */
+
+.pl-details {
+  position: absolute; left: 5px; top: 134px; width: 710px; height: 1388px;
+  display: flex; flex-direction: column;
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+}
+.pl-details::-webkit-scrollbar { display: none; }
+.pl-details .details__value { color: var(--c-ink-muted); }
+.pl-details .details__value--strong { color: var(--c-black); }
+.pl-details .details__row--tall { height: auto; }
+.pl-details .details__row--tall .details__value { white-space: pre-line; }
+.pl-details .details__row--url { flex-direction: row; align-items: center; gap: 15px; }
+.pl-details .details__row--url > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 15px; }
+.pl-details .details__row--url .details__value { overflow-wrap: anywhere; }
+.pl-qr-btn {
+  flex: none; width: 56px; height: 56px; margin-right: -12px;
+  display: grid; place-items: center;
+  appearance: none; border: 0; padding: 0; background: none; border-radius: 8px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.pl-qr-btn img { width: 32px; height: 32px; }
+.pl-qr-btn:active { background: var(--c-gray-50); }
+.pl-qr-btn:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }
+.pl-details .day { flex: none; }
+.pl-details .day__count { flex: none; }
+/* A row shown but not openable: payment attempts (not wired in Figma), links being created */
+.txn--static { cursor: default; }
+.txn--static:active { background: var(--c-white); }
+.pl-details .journal-empty { padding: 40px; }
+
+.pl-qr { display: block; align-self: center; image-rendering: pixelated; }   /* 363 × 368, set in the markup */
+
+/* Communication language sheet: same sheet as Filters / Print copies, its bottom on the
+   Android bar. The list shows six and a half rows, so the cut-off row shows it scrolls. */
+.sheet-layer--lang .sheet-layer__backdrop { height: 1522px; }
+.bsheet--lang { top: 715px; height: 807px; }
+.pl-langs {
+  position: relative; flex: none; height: 572px; margin: 0 -35px;
+  border-top: 1px solid var(--c-gray-200); border-bottom: 1px solid var(--c-gray-200);
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+}
+.pl-langs::-webkit-scrollbar { display: none; }
+.pl-lang {
+  width: 100%; height: 88px;
+  display: flex; align-items: center; justify-content: space-between; padding: 0 35px;
+  appearance: none; border: 0; margin: 0;
+  border-bottom: 1px solid var(--c-gray-200);
+  background: var(--c-white);
+  font: inherit; font-size: 26px; line-height: 31px; color: var(--c-black); text-align: left;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.pl-lang:last-child { border-bottom: 0; }
+.pl-lang:active { background: var(--c-gray-50); }
+.pl-lang img { width: 32px; height: 32px; visibility: hidden; }
+/* The chosen language: grey row, ExtraBold, with a tick (as the menu's current entry) */
+.pl-lang[aria-checked="true"] { background: var(--c-gray-100); font-weight: 800; }
+.pl-lang[aria-checked="true"] img { visibility: visible; }
+.pl-lang:focus-visible { outline: 4px solid var(--c-black); outline-offset: -4px; }
+.bsheet__btn--lang { flex: none; }
+/* A soft fade on whichever edge has more languages beyond it */
+.pl-langs {
+  --up: 0px; --down: 0px;
+  -webkit-mask-image: linear-gradient(transparent, #000 var(--up), #000 calc(100% - var(--down)), transparent);
+  mask-image: linear-gradient(transparent, #000 var(--up), #000 calc(100% - var(--down)), transparent);
+}
+.pl-langs.can-up { --up: 48px; }
+.pl-langs.can-down { --down: 48px; }

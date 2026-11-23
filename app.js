@@ -96,7 +96,7 @@
       body =
         '<p class="panel__prompt panel__prompt--muted">' + cfg.prompt + "</p>" +
         '<img class="schemes" src="assets/card-schemes@2x.webp" alt="CB, Visa, Mastercard, American Express, Diners Club, Discover, UnionPay, JCB">' +
-        // Looping animation from "POS Animation.mp4"; a still frame when reduced motion is on.
+        // Looping tap-to-pay animation (from the designer's GIF); a still frame when reduced motion is on.
         '<picture class="terminal-art" aria-hidden="true">' +
         '  <source srcset="assets/present-card-still.webp" media="(prefers-reduced-motion: reduce)">' +
         '  <img src="assets/present-card.webp" alt="">' +
@@ -370,11 +370,29 @@
 
     var duration = reducedMotion.matches ? 0 : transition.duration;
     if (from && from !== to) {
-      if (duration > 0) {
-        to.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duration, easing: transition.easing })
-          .finished.then(function () { if (current !== from.getAttribute("data-view")) from.classList.remove("is-active"); });
-      } else {
+      var fromId = from.getAttribute("data-view");
+      // Once the old screen is out of sight it goes, with any dialog or sheet left open on it
+      // (unless the user came straight back to it meanwhile).
+      var leave = function () {
+        if (current === fromId) return;
         from.classList.remove("is-active");
+        screenLayers(fromId).forEach(function (layer) { hideLayer(layer, 0); });
+      };
+      var noop = function () {};
+      if (duration > 0 && transition.move === "in") {
+        // Figma "Move in" from the right: the new screen slides over the old one.
+        to.animate([{ transform: "translateX(100%)" }, { transform: "none" }], { duration: duration, easing: transition.easing })
+          .finished.then(leave, noop);
+      } else if (duration > 0 && transition.move === "out") {
+        // Figma "Move out" to the right: the old screen slides away, uncovering the new one.
+        from.style.zIndex = String(++z);
+        var out = from.animate([{ transform: "none" }, { transform: "translateX(100%)" }], { duration: duration, easing: transition.easing, fill: "forwards" });
+        out.finished.then(function () { leave(); out.cancel(); }, noop);
+      } else if (duration > 0) {
+        to.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duration, easing: transition.easing })
+          .finished.then(leave, noop);
+      } else {
+        leave();
       }
     }
 
@@ -406,9 +424,16 @@
     else hideLayer(timeLayer, 0);
     if (id === "collections") enterCollections();
     else leaveCollections();
+    // Pay by Link: the list is rebuilt and cascades in when opened from the menu, not when
+    // coming back to it from its own screens.
+    if (id === "paylinks" && sectionOf(prevId) !== "paylinks") { renderPaylinks(); cascadeRows(plList, 120, ".day, .txn, .journal-empty"); }
   }
 
   var APP_ANNOUNCE = {
+    "paylinks": "Pay by Link",
+    "paylink-new-1": "New payment link, step 1 of 2: payment details",
+    "paylink-new-2": "New payment link, step 2 of 2: the client",
+    "paylink-details": "Pay by Link details",
     "journal": "Transaction’s history",
     "details": "Transactions’ details",
     "summary": "Daily summary",
@@ -500,6 +525,8 @@
 
   function pad(n) { return (n < 10 ? "0" : "") + n; }
   function euros(cents) { return fmt.format(cents / 100) + " €"; }
+  function clock(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }   // "17:12"
+  function longStamp(d) { return pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear() + " at " + clock(d) + ":" + pad(d.getSeconds()); }   // "10/11/2025 at 17:12:04"
   var dayFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 
   // A sale approved in the payment flow shows up in the history, under today's date.
@@ -508,12 +535,11 @@
     transactions.unshift({
       id: "s" + now.getTime(),
       day: dayFmt.format(now),
-      time: pad(now.getHours()) + ":" + pad(now.getMinutes()),
+      time: clock(now),
       cents: parseInt(digits || "0", 10),
       status: "accepted",
       method: payMethod,
-      date: pad(now.getDate()) + "/" + pad(now.getMonth() + 1) + "/" + now.getFullYear() +
-        " at " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds())
+      date: longStamp(now)
     });
     journalDirty = true;
     // …and counts in the daily summary of the business day it falls in.
@@ -562,12 +588,15 @@
 
   /* ---- History list ---- */
 
-  function rowHtml(t) {
+  // `inert`: the same row, shown but not openable (a payment link's attempts).
+  function rowHtml(t, inert) {
     var label = t.status === "accepted" ? "Debit accepted" : "Debit declined";
     var alipay = t.method === "alipay";
+    var tag = inert ? "div" : "button";
     return (
-      '<button class="txn" type="button" data-action="open-details" data-id="' + t.id + '"' +
-      ' aria-label="' + t.time + (alipay ? ", Alipay+, " : ", card ending 6666, ") + label + ", " + euros(t.cents) + '">' +
+      (inert ? '<div class="txn txn--static">'
+        : '<button class="txn" type="button" data-action="open-details" data-id="' + t.id + '"' +
+          ' aria-label="' + t.time + (alipay ? ", Alipay+, " : ", card ending 6666, ") + label + ", " + euros(t.cents) + '">') +
       '<span class="txn__time"><span>' + t.time + '</span><img src="assets/icon-history.svg" alt="" width="32" height="32"></span>' +
       '<span class="txn__sep"></span>' +
       '<span class="txn__info">' +
@@ -578,7 +607,7 @@
       "</span>" +
       '<span class="txn__amount">' + euros(t.cents) + "</span>" +
       '<img src="assets/icon-next.svg" alt="" width="32" height="32">' +
-      "</button>"
+      "</" + tag + ">"
     );
   }
 
@@ -589,13 +618,7 @@
       journalList.innerHTML = '<p class="journal-empty">No transactions match these filters.</p>';
       return;
     }
-    var groups = [];
-    var byDay = {};
-    shown.forEach(function (t) {
-      if (!byDay[t.day]) { byDay[t.day] = { day: t.day, rows: [] }; groups.push(byDay[t.day]); }
-      byDay[t.day].rows.push(t);
-    });
-    journalList.innerHTML = groups.map(function (g) {
+    journalList.innerHTML = groupByDay(shown, function (t) { return t.day; }).map(function (g) {
       var total = g.rows.reduce(function (sum, t) { return sum + t.cents; }, 0);
       var open = !collapsedDays[g.day];
       return (
@@ -603,7 +626,7 @@
         '<button class="day" type="button" data-action="toggle-day" data-day="' + g.day + '" aria-expanded="' + open + '">' +
         '<span class="day__label" lang="fr">' + g.day + "</span><span>" + euros(total) + "</span>" +
         '<img src="assets/icon-down.svg" alt=""></button>' +
-        '<div class="day-rows"' + (open ? "" : " hidden") + ">" + g.rows.map(rowHtml).join("") + "</div>" +
+        '<div class="day-rows"' + (open ? "" : " hidden") + ">" + g.rows.map(function (t) { return rowHtml(t); }).join("") + "</div>" +
         "</div>"
       );
     }).join("");
@@ -629,11 +652,24 @@
     });
   }
 
-  function toggleDay(btn) {
+  // `collapsed` remembers which days are shut: the history's by default, or another list's.
+  function toggleDay(btn, collapsed) {
+    collapsed = collapsed || collapsedDays;
     var day = btn.getAttribute("data-day");
-    collapsedDays[day] = !collapsedDays[day];
-    btn.setAttribute("aria-expanded", String(!collapsedDays[day]));
-    btn.nextElementSibling.hidden = !!collapsedDays[day];
+    collapsed[day] = !collapsed[day];
+    btn.setAttribute("aria-expanded", String(!collapsed[day]));
+    btn.nextElementSibling.hidden = !!collapsed[day];
+  }
+
+  // Rows in list order → [{ day, rows }], one group per day, in order of first appearance.
+  function groupByDay(rows, dayOf) {
+    var groups = [], byDay = {};
+    rows.forEach(function (r) {
+      var day = dayOf(r);
+      if (!byDay[day]) { byDay[day] = { day: day, rows: [] }; groups.push(byDay[day]); }
+      byDay[day].rows.push(r);
+    });
+    return groups;
   }
 
   /* ---- Overlays: fade in/out (Smart Animate between frames reads as a dissolve) ---- */
@@ -677,9 +713,9 @@
     if (duration && !reducedMotion.matches && sheet) {
       el.querySelector(".sheet-layer__backdrop").animate([{ opacity: 1 }, { opacity: 0 }], { duration: SHEET_OUT.duration, easing: EASE_IN, fill: "forwards" });
       sheet.animate([{ transform: "none" }, { transform: "translateY(" + sheet.offsetHeight + "px)" }],
-        { duration: SHEET_OUT.duration, easing: SHEET_OUT.easing, fill: "forwards" }).finished.then(done);
+        { duration: SHEET_OUT.duration, easing: SHEET_OUT.easing, fill: "forwards" }).finished.then(done, function () { /* cancelled: reopened meanwhile */ });
     } else if (duration && !reducedMotion.matches) {
-      el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: duration, easing: EASE_IN, fill: "forwards" }).finished.then(done);
+      el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: duration, easing: EASE_IN, fill: "forwards" }).finished.then(done, function () { /* cancelled: reopened meanwhile */ });
     } else {
       done();
     }
@@ -694,7 +730,8 @@
   var menuBusy = false;
 
   // The menu entry a screen belongs to.
-  var SECTIONS = { details: "journal", journal: "journal", summary: "summary", settings: "settings", "summary-settings": "settings", collections: "collections" };
+  var SECTIONS = { details: "journal", journal: "journal", summary: "summary", settings: "settings", "summary-settings": "settings", collections: "collections",
+    paylinks: "paylinks", "paylink-new-1": "paylinks", "paylink-new-2": "paylinks", "paylink-details": "paylinks" };
   function sectionOf(id) { return SECTIONS[id] || "amount-entry"; }
 
   function markMenu(target) {
@@ -733,7 +770,7 @@
     if (reducedMotion.matches) { done(); return; }
     scrim.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: EASE_OUT, fill: "forwards" });
     menuEl.animate([{ transform: "translateX(0)" }, { transform: "translateX(-480px)" }],
-      { duration: 200, easing: EASE_OUT, fill: "forwards" }).finished.then(done);
+      { duration: 200, easing: EASE_OUT, fill: "forwards" }).finished.then(done, function () { /* cancelled: reopened meanwhile */ });
   }
 
   function menuGo(btn) {
@@ -957,7 +994,8 @@
   // Upcoming features, switched from the stage menu (☰, top-left of the page) and remembered per browser.
   var FLAGS_KEY = "payment-terminal:feature-flags";
   // "alipay-qr" takes effect from the next Present Card (see resolveScreen).
-  var flags = { "ecr-modes": false, "alipay-qr": false };
+  // "pay-by-link" adds Pay by Link to the side menu (see applyFlagItems).
+  var flags = { "ecr-modes": false, "alipay-qr": false, "pay-by-link": false };
   try {
     var savedFlags = JSON.parse(localStorage.getItem(FLAGS_KEY) || "{}");
     Object.keys(flags).forEach(function (k) { if (savedFlags && savedFlags[k] === true) flags[k] = true; });
@@ -1057,8 +1095,22 @@
       flags[key] = input.checked;
       try { localStorage.setItem(FLAGS_KEY, JSON.stringify(flags)); } catch (e) { /* not remembered */ }
       if (dsDay) renderSummary();
+      applyFlagItems();
     });
   });
+
+  // Side-menu entries that belong to an upcoming feature. Switching one off while its screens
+  // are on show goes back to Charge.
+  function applyFlagItems() {
+    document.querySelectorAll("[data-flag-item]").forEach(function (li) {
+      li.hidden = !flags[li.getAttribute("data-flag-item")];
+    });
+    var entry = current && drawer.querySelector("[data-target='" + sectionOf(current) + "']");
+    if (entry && entry.closest("li").hidden) {
+      if (!drawer.hidden) closeMenuNow();
+      newSale();
+    }
+  }
 
   function activePanel() { return dsView.querySelector("[data-ds-panel]:not([hidden])"); }
 
@@ -1533,10 +1585,454 @@
     return false;
   }
 
+  /* ------------------------------------------------------------------ *
+   * Pay by Link (menu › Pay by Link, behind Upcoming features)          *
+   * Figma "PayXpress Compose" › Pay by Link (section 6481:33361)        *
+   * ------------------------------------------------------------------ */
+
+  var MOVE_IN_300 = { duration: 300, easing: EASE_OUT, move: "in" };    // list → new payment link
+  var MOVE_IN_400 = { duration: 400, easing: EASE_OUT, move: "in" };    // list → details
+  var MOVE_OUT_400 = { duration: 400, easing: EASE_OUT, move: "out" };  // "Link sent" OK → list
+  var PL_DIALOG_IN = 400;                                               // Dissolve 400 ms ease-out
+
+  var plView = views["paylinks"];
+  var plList = plView.querySelector("[data-pl-list]");
+  var plSearch = plView.querySelector("[data-pl-search]");
+  var plForm1 = views["paylink-new-1"].querySelector("[data-pl-form='1']");
+  var plForm2 = views["paylink-new-2"].querySelector("[data-pl-form='2']");
+  var plConfirm = views["paylink-new-2"].querySelector("[data-layer='pl-confirm']");
+  var plDetails = views["paylink-details"].querySelector("[data-pl-details]");
+  var plQr = views["paylink-details"].querySelector("[data-layer='pl-qr']");
+  var plCollapsed = {};
+  var plShown = null;        // the link on the details screen
+  var plAttemptsOpen = true;
+  var plQrOpener = null;
+
+  var PL_STATUS = {
+    creating: { label: "Creation in progress", icon: "assets/status-creating.svg" },
+    awaiting: { label: "Awaiting payment", icon: "assets/status-awaiting.svg" },
+    paid: { label: "Paid", icon: "assets/status-accepted.svg" },
+    failed: { label: "Failed", icon: "assets/status-declined.svg" }
+  };
+  // Each language in its own name, in alphabetical order; the picker lists them in this order.
+  var PL_LANGS = {
+    ca: "Català", cs: "Čeština", da: "Dansk", de: "Deutsch", en: "English", es: "Español",
+    fr: "Français", it: "Italiano", hu: "Magyar", nl: "Nederlands", no: "Norsk", pl: "Polski",
+    pt: "Português", ro: "Română", fi: "Suomi", sv: "Svenska", el: "Ελληνικά", ja: "日本語", zh: "中文"
+  };
+  var PL_VALID_DAYS = 15;
+  var PL_MAX_ATTEMPTS = 2;
+  var plDayFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
+  }
+  function plToken() {
+    var abc = "abcdefghijklmnopqrstuvwxyz0123456789", s = "";
+    for (var i = 0; i < 22; i++) s += abc.charAt(Math.floor(Math.random() * abc.length));
+    return "pay.link.payxpert.com/b2c/" + s;
+  }
+
+  // Figma 6481:35607 lists one day of links. They are dated yesterday so that the ones still
+  // awaiting payment are inside their 15 days. Figma's #123D245D / John Watson opens on 6481:35584.
+  var plSeq = 0;
+  var paylinks = (function () {
+    var day = addDays(midnight(new Date()), -1);
+    return [
+      ["17:40", "awaiting", "123456CD", 1500, "hudson@email.com", ["Martha", "Hudson", "221A Baker Street", "NW1 6XE", "London", "England", ""]],
+      ["16:05", "paid", "123D245D", 1500, "watson@email.com", ["John", "Watson", "221B Baker Street", "NW1 6XE", "London", "England", "+44 7123456789"]],
+      ["15:30", "failed", "ERO236-7", 4250, "lestrade@email.com", ["Greg", "Lestrade", "", "", "", "", "+44 7700900123"]],
+      ["14:20", "paid", "124A771C", 1500, "adler@email.com", ["Irene", "Adler", "", "", "", "", ""]],
+      ["13:55", "failed", "ERO241-2", 8990, "moriarty@email.com", ["James", "Moriarty", "", "", "", "", ""]],
+      ["12:10", "paid", "125B902E", 1500, "mycroft@email.com", ["Mycroft", "Holmes", "Pall Mall", "SW1Y 5HL", "London", "England", ""]],
+      ["11:45", "failed", "ERO247-9", 2400, "molly@email.com", ["Molly", "Hooper", "", "", "", "", ""]],
+      ["10:30", "paid", "126C318F", 12000, "mary@email.com", ["Mary", "Morstan", "", "", "", "", "+44 7700900456"]],
+      ["09:15", "failed", "ERO252-4", 1500, "gregson@email.com", ["Tobias", "Gregson", "", "", "", "", ""]]
+    ].map(function (r) {
+      var hm = r[0].split(":");
+      var created = new Date(day); created.setHours(+hm[0], +hm[1], 12, 0);
+      var c = r[5];
+      var after = function (min) { return new Date(created.getTime() + min * 60000); };
+      return {
+        id: "pl" + (plSeq++), created: created, status: r[1], order: r[2], cents: r[3], email: r[4],
+        merchant: "merchant@email.com", lang: "fr", url: plToken(),
+        client: { first: c[0], last: c[1], address: c[2], postal: c[3], city: c[4], country: c[5], phone: c[6] },
+        // Newest first. A paid link was declined once before it went through.
+        attempts: r[1] === "paid" ? [{ at: after(9), ok: true }, { at: after(4), ok: false }]
+          : r[1] === "failed" ? [{ at: after(11), ok: false }, { at: after(5), ok: false }] : []
+      };
+    });
+  })();
+
+  /* ---- L1 · List ---- */
+
+  function plRowHtml(l) {
+    var st = PL_STATUS[l.status];
+    var pending = l.status === "creating";
+    var inner =
+      '<span class="txn__time"><span>' + clock(l.created) + "</span></span>" +
+      '<span class="txn__sep"></span>' +
+      '<span class="txn__info"><span class="txn__pan">#' + esc(l.order) + "</span>" +
+      '<span class="txn__status"><img src="' + st.icon + '" alt="" width="32" height="32">' + st.label + "</span></span>" +
+      '<span class="txn__amount">' + euros(l.cents) + "</span>" +
+      '<img src="assets/icon-next.svg" alt="" width="32" height="32">';
+    return pending
+      ? '<div class="txn txn--pl txn--static is-pending">' + inner + "</div>"
+      : '<button class="txn txn--pl" type="button" data-action="pl-open" data-id="' + l.id + '"' +
+        ' aria-label="' + clock(l.created) + ", order " + esc(l.order) + ", " + st.label + ", " + euros(l.cents) + '">' + inner + "</button>";
+  }
+
+  function renderPaylinks() {
+    var q = plSearch.value.trim().toLowerCase();
+    var shown = paylinks.filter(function (l) { return !q || l.email.toLowerCase().indexOf(q) !== -1; });
+    if (!shown.length) {
+      plList.innerHTML = '<p class="journal-empty">No payment links for this email.</p>';
+      return;
+    }
+    plList.innerHTML = groupByDay(shown, function (l) { return plDayFmt.format(l.created); }).map(function (g) {
+      var open = !plCollapsed[g.day];
+      return (
+        '<div class="day-group">' +
+        '<button class="day" type="button" data-action="pl-toggle-day" data-day="' + g.day + '" aria-expanded="' + open + '">' +
+        '<span class="day__label">' + g.day + '</span><img src="assets/icon-down.svg" alt=""></button>' +
+        '<div class="day-rows"' + (open ? "" : " hidden") + ">" + g.rows.map(plRowHtml).join("") + "</div>" +
+        "</div>"
+      );
+    }).join("");
+  }
+
+  plSearch.addEventListener("input", function () {
+    renderPaylinks();
+    plList.scrollTop = 0;
+  });
+
+  /* ---- L2 / L3 · New payment link ----
+     The fields start filled with Figma's example (Sherlock Holmes, order #ORD-39858-GH) so the
+     flow can be clicked straight through; clearing a required field shows its error. */
+
+  var PL_FIELDS = {
+    payment: [
+      { name: "amount", label: "Amount (€)", required: true, kind: "amount", value: "35,00", placeholder: "0,00" },
+      { name: "order", label: "Order ID", required: true, value: "ORD-39858-GH", placeholder: "123456" },
+      { name: "email", label: "Email of the client", required: true, kind: "email", value: "sherlock@email.com", placeholder: "example@email.com" },
+      { name: "lang", label: "Communication language", required: true, kind: "select", value: "fr" },
+      { name: "merchant", label: "Email of the merchant", kind: "email", value: "", placeholder: "example@email.com",
+        hint: "If set, you’ll get an email from our platform when the transaction’s status changes to “Authorized” or “Refused”." }
+    ],
+    client: [
+      { name: "first", label: "First name", required: true, value: "Sherlock", autocomplete: "given-name" },
+      { name: "last", label: "Last name", required: true, value: "Holmes", autocomplete: "family-name" }
+    ],
+    address: [
+      { name: "address", label: "Address", value: "221B Baker Street", placeholder: "1 Example street", autocomplete: "street-address" },
+      { name: "postal", label: "Postal code", value: "NW1 6XE", placeholder: "31038", autocomplete: "postal-code" },
+      { name: "city", label: "City", value: "London", autocomplete: "address-level2" },
+      { name: "country", label: "Country", value: "England", autocomplete: "country-name" },
+      { name: "phone", label: "Phone number", kind: "tel", value: "+44 7123456789", placeholder: "+33 6 66 66 66 66", autocomplete: "tel" }
+    ]
+  };
+  var plFieldDefs = {};   // name → field
+  Object.keys(PL_FIELDS).forEach(function (group) {
+    PL_FIELDS[group].forEach(function (f) { plFieldDefs[f.name] = f; });
+  });
+
+  function plFieldHtml(f) {
+    var id = "pl-" + f.name;
+    var common = ' class="pl-field__input" id="' + id + '" name="' + f.name + '" aria-describedby="' + id + '-msg"' +
+      (f.required ? ' aria-required="true"' : "");
+    var control;
+    if (f.kind === "select") {
+      // Opens the language sheet (a native <select> would show the browser's own list).
+      // Named by its label and the language on show: "Communication language *, Français".
+      control = '<button type="button"' + common + ' data-action="pl-lang-open" aria-haspopup="dialog" aria-labelledby="' + id + '-label ' + id + '-text">' +
+        '<span id="' + id + '-text" data-pl-lang-text></span></button><img class="pl-field__chev" src="assets/icon-down.svg" alt="">';
+    } else {
+      control = "<input" + common +
+        ' type="' + (f.kind === "email" ? "email" : f.kind === "tel" ? "tel" : "text") + '"' +
+        (f.kind === "amount" ? ' inputmode="decimal"' : "") +
+        (f.placeholder ? ' placeholder="' + esc(f.placeholder) + '"' : "") +
+        ' autocomplete="' + (f.autocomplete || "off") + '" spellcheck="false">';
+    }
+    return '<div class="pl-field" data-field="' + f.name + '">' +
+      '<div class="pl-field__box">' + control + "</div>" +
+      '<label class="pl-field__label" id="' + id + '-label" for="' + id + '">' + f.label + (f.required ? " *" : "") + "</label>" +
+      '<p class="pl-field__msg" id="' + id + '-msg">' + (f.hint || "") + "</p>" +
+      "</div>";
+  }
+
+  Object.keys(PL_FIELDS).forEach(function (group) {
+    var box = document.querySelector("[data-pl-fields='" + group + "']");
+    box.innerHTML = PL_FIELDS[group].map(plFieldHtml).join("");
+  });
+
+  function plInput(name) { return document.getElementById("pl-" + name); }
+
+  function plSetError(name, msg) {
+    var f = plFieldDefs[name];
+    var input = plInput(name);
+    var field = input.closest(".pl-field");
+    field.classList.toggle("is-invalid", !!msg);
+    if (msg) input.setAttribute("aria-invalid", "true"); else input.removeAttribute("aria-invalid");
+    field.querySelector(".pl-field__msg").textContent = msg || f.hint || "";
+  }
+
+  /* ---- Communication language: a bottom sheet with a scrolling list ----
+     Same sheet as Filters / Print copies (slides up, 25% backdrop). About six and a half
+     rows show, so the cut-off row says there is more; the chosen one is scrolled into view. */
+
+  var plLangBtn = plInput("lang");
+  var plLangLayer = views["paylink-new-1"].querySelector("[data-layer='pl-lang']");
+  var plLangList = plLangLayer.querySelector("[data-pl-langs]");
+
+  plLangList.innerHTML = Object.keys(PL_LANGS).map(function (k) {
+    return '<button class="pl-lang" type="button" role="radio" aria-checked="false" tabindex="-1" data-action="pl-lang-pick" data-lang="' + k + '">' +
+      '<span lang="' + k + '">' + PL_LANGS[k] + '</span><img src="assets/icon-check.svg" alt=""></button>';
+  }).join("");
+  var plLangRows = Array.prototype.slice.call(plLangList.querySelectorAll(".pl-lang"));
+
+  function plLangEdges() {
+    var top = plLangList.scrollTop;
+    plLangList.classList.toggle("can-up", top > 1);
+    plLangList.classList.toggle("can-down", top + plLangList.clientHeight < plLangList.scrollHeight - 1);
+  }
+  plLangList.addEventListener("scroll", plLangEdges, { passive: true });
+
+  function plSetLang(code) {
+    plLangBtn.value = code;
+    var text = plLangBtn.querySelector("[data-pl-lang-text]");
+    text.textContent = PL_LANGS[code];
+    text.setAttribute("lang", code);
+  }
+
+  function plOpenLang() {
+    plLangRows.forEach(function (row) {
+      var on = row.getAttribute("data-lang") === plLangBtn.value;
+      row.setAttribute("aria-checked", String(on));
+      row.tabIndex = on ? 0 : -1;
+    });
+    showLayer(plLangLayer, 300);
+    var picked = plLangList.querySelector("[aria-checked='true']") || plLangRows[0];
+    // Centre the chosen language in the list, then focus it.
+    plLangList.scrollTop = picked.offsetTop - (plLangList.clientHeight - picked.offsetHeight) / 2;
+    plLangEdges();
+    picked.focus({ preventScroll: true });
+    announce("Communication language. " + plLangRows.length + " languages");
+  }
+
+  function plCloseLang() { hideLayer(plLangLayer, 300, plLangBtn); }
+
+  function plPickLang(row) {
+    plSetLang(row.getAttribute("data-lang"));
+    plLangRows.forEach(function (r) { r.setAttribute("aria-checked", String(r === row)); });
+    if (plLangBtn.closest(".pl-field").classList.contains("is-invalid")) plSetError("lang", plCheck("lang"));
+    plCloseLang();
+    announce("Communication language: " + PL_LANGS[plLangBtn.value]);
+  }
+
+  // Up / Down / Home / End move through the languages; Enter or Space picks one.
+  plLangList.addEventListener("keydown", function (e) {
+    var i = plLangRows.indexOf(document.activeElement);
+    if (i === -1) return;
+    var next = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: plLangRows.length - 1 }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    next = Math.max(0, Math.min(plLangRows.length - 1, next));
+    plLangRows[i].tabIndex = -1;
+    plLangRows[next].tabIndex = 0;
+    plLangRows[next].focus();   // scrolls it into view
+  });
+
+  function plResetForm() {
+    Object.keys(plFieldDefs).forEach(function (name) {
+      if (name === "lang") plSetLang(plFieldDefs[name].value);
+      else plInput(name).value = plFieldDefs[name].value;
+      plSetError(name, null);
+    });
+    plForm1.querySelector(".pl-form__fields").scrollTop = 0;
+    plForm2.querySelector(".pl-form__fields").scrollTop = 0;
+  }
+
+  // "35", "35,5", "35.50", "1 250,00" → cents; NaN when it isn't an amount.
+  function plCents(text) {
+    var t = text.replace(/[\s  ]/g, "").replace(",", ".");
+    if (!/^\d+(\.\d{0,2})?$/.test(t)) return NaN;
+    return Math.round(parseFloat(t) * 100);
+  }
+
+  function plCheck(name) {
+    var f = plFieldDefs[name];
+    var v = plInput(name).value.trim();
+    if (!v) return f.required ? "This field is mandatory" : null;
+    if (f.kind === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return "Enter a valid email address, like name@example.com";
+    if (f.kind === "amount") {
+      var c = plCents(v);
+      if (!(c > 0)) return "Enter an amount above 0,00";
+      if (c > 9999999) return "The amount can’t be more than 99 999,99 €";
+    }
+    return null;
+  }
+
+  // Checks a step's fields; shows each error and returns the first field in error, if any.
+  function plValidate(form) {
+    var first = null, firstMsg = "";
+    form.querySelectorAll(".pl-field__input").forEach(function (input) {
+      var msg = plCheck(input.name);
+      plSetError(input.name, msg);
+      if (msg && !first) { first = input; firstMsg = msg; }
+    });
+    if (first) {
+      first.focus({ preventScroll: true });
+      first.closest(".pl-field").scrollIntoView({ block: "nearest" });
+      var n = form.querySelectorAll(".pl-field.is-invalid").length;
+      announce((n === 1 ? "1 field needs" : n + " fields need") + " attention. " + plFieldDefs[first.name].label + ": " + firstMsg);
+    }
+    return first;
+  }
+
+  // Once a field shows an error, it is checked again as it is corrected.
+  [plForm1, plForm2].forEach(function (form) {
+    form.addEventListener("input", function (e) {
+      var field = e.target.closest(".pl-field");
+      if (field && field.classList.contains("is-invalid")) plSetError(e.target.name, plCheck(e.target.name));
+    });
+  });
+  // The amount reads back as "35,00" once typed.
+  plInput("amount").addEventListener("blur", function () {
+    if (this.value.trim() && !plCheck("amount")) this.value = fmt.format(plCents(this.value.trim()) / 100);
+  });
+
+  plForm1.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (plValidate(plForm1)) return;
+    go("paylink-new-2", INSTANT);   // Figma: Next, instant
+  });
+
+  plForm2.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (plValidate(plForm2)) return;
+    var val = function (n) { return plInput(n).value.trim(); };
+    var order = val("order").replace(/^#/, "");
+    paylinks.unshift({
+      id: "pl" + (plSeq++), created: new Date(), status: "creating", order: order, cents: plCents(val("amount")),
+      email: val("email"), merchant: val("merchant"), lang: plInput("lang").value, url: plToken(),
+      client: { first: val("first"), last: val("last"), address: val("address"), postal: val("postal"), city: val("city"), country: val("country"), phone: val("phone") },
+      attempts: []
+    });
+    plConfirm.querySelector("[data-pl-confirm-order]").textContent = "#" + order;
+    showLayer(plConfirm, PL_DIALOG_IN, "[data-action='pl-confirm-ok']");
+    announce("Confirmation. The payment link for order #" + order + " has been sent to the client.");
+  });
+
+  // OK slides the form (with the dialog on it) away to the right, uncovering the list.
+  function plConfirmOk() {
+    plSearch.value = "";
+    renderPaylinks();
+    plList.scrollTop = 0;
+    go("paylinks", MOVE_OUT_400);   // the dialog leaves with its screen (see go)
+  }
+
+  /* ---- L4 · Details ---- */
+
+  // `tall`: a multi-line value; `strong`: a black value (Figma: the order ID), not dark grey.
+  function plRow(label, value, opts) {
+    opts = opts || {};
+    return '<div class="details__row' + (opts.tall ? " details__row--tall" : "") + '"><p class="details__label">' + label + "</p>" +
+      '<p class="details__value' + (opts.strong ? " details__value--strong" : "") + '">' + value + "</p></div>";
+  }
+
+  function renderPlDetails(l) {
+    var st = PL_STATUS[l.status];
+    var c = l.client;
+    var place = [c.city && c.postal ? c.city + ", " + c.postal : c.city || c.postal, c.country].filter(Boolean);
+    var who = [c.first + " " + c.last, c.address].concat(place).filter(Boolean).join("\n") + (c.phone ? "\n\nPhone: " + c.phone : "");
+    var expires = new Date(l.created.getTime() + PL_VALID_DAYS * 86400000);
+    var n = l.attempts.length;
+    plDetails.innerHTML =
+      '<div class="details__row details__row--status"><p class="details__label">Status</p>' +
+      '<p class="details__value details__status"><img src="' + st.icon + '" alt="" width="32" height="32"><span>' + st.label + "</span></p></div>" +
+      plRow("Amount", euros(l.cents)) +
+      plRow("Creation date", longStamp(l.created)) +
+      plRow("Order ID", "#" + esc(l.order), { strong: true }) +
+      plRow("Email of the client", esc(l.email)) +
+      plRow("Client’s information", esc(who), { tall: true }) +
+      plRow("Email of the merchant", l.merchant ? esc(l.merchant) : "Not set") +
+      plRow("Expiration date", longStamp(expires)) +
+      plRow("Communication language", PL_LANGS[l.lang]) +
+      '<div class="details__row details__row--url"><div><p class="details__label">URL for payment</p><p class="details__value">' + l.url + "</p></div>" +
+      '<button class="pl-qr-btn" type="button" data-action="pl-qr" aria-label="Show the payment URL as a QR code" aria-haspopup="dialog"><img src="assets/icon-qr-link.svg" alt=""></button></div>' +
+      plRow("Maximum accepted attempts", String(PL_MAX_ATTEMPTS)) +
+      '<button class="day" type="button" data-action="pl-toggle-attempts" aria-expanded="' + plAttemptsOpen + '" aria-controls="plAttempts">' +
+      '<span class="day__label">Payment attempts</span><span class="day__count">' + n + '</span><img src="assets/icon-down.svg" alt=""></button>' +
+      '<div class="day-rows" id="plAttempts"' + (plAttemptsOpen ? "" : " hidden") + ">" +
+      (n ? l.attempts.map(function (a) { return rowHtml({ time: clock(a.at), status: a.ok ? "accepted" : "declined", cents: l.cents }, true); }).join("") : '<p class="journal-empty">No payment attempts yet.</p>') +
+      "</div>";
+  }
+
+  function plOpen(id) {
+    var l = paylinks.filter(function (x) { return x.id === id; })[0];
+    if (!l || l.status === "creating") return;
+    plShown = l;
+    renderPlDetails(l);
+    plDetails.scrollTop = 0;
+    go("paylink-details", MOVE_IN_400);
+  }
+
+  function plCloseQr() { hideLayer(plQr, 0, plQrOpener); }   // Figma: Close, instant
+
+  function plBackFromDetails() {
+    go("paylinks", INSTANT);   // Figma: Back, instant
+    var row = plShown && plList.querySelector("[data-id='" + plShown.id + "']");
+    if (row) row.focus({ preventScroll: true });
+  }
+
+  function handlePaylinkClick(action, el) {
+    switch (action) {
+      case "pl-new":
+        plResetForm();
+        go("paylink-new-1", MOVE_IN_300);
+        return true;
+      case "pl-back-list":
+        go("paylinks", INSTANT);
+        return true;
+      case "pl-back-step":
+        go("paylink-new-1", INSTANT);
+        plForm1.querySelector(".pl-form__btn").focus({ preventScroll: true });
+        return true;
+      case "pl-toggle-day": toggleDay(el, plCollapsed); return true;
+      case "pl-open": plOpen(el.getAttribute("data-id")); return true;
+      case "pl-back-details": plBackFromDetails(); return true;
+      case "pl-toggle-attempts":
+        plAttemptsOpen = !plAttemptsOpen;
+        el.setAttribute("aria-expanded", String(plAttemptsOpen));
+        el.nextElementSibling.hidden = !plAttemptsOpen;
+        return true;
+      case "pl-qr":
+        plQrOpener = el;
+        showLayer(plQr, PL_DIALOG_IN, ".cdialog__btn");
+        announce("Scan the QR code");
+        return true;
+      case "pl-qr-close": plCloseQr(); return true;
+      case "pl-confirm-ok": plConfirmOk(); return true;
+      case "pl-lang-open": plOpenLang(); return true;
+      case "pl-lang-close": plCloseLang(); return true;
+      case "pl-lang-pick": plPickLang(el); return true;
+    }
+    return false;
+  }
+
   // The open modal layer, if any: menu, then the overlays of the current screen.
+  // The overlays a screen can open, topmost first. go() closes them when their screen leaves.
+  function screenLayers(id) {
+    var ticket = id === "receipt" || id === "receipt-old" ? [views[id].querySelector(".ticket")] : null;
+    return ticket || {
+      details: [copyTicket, printLayer], journal: [filtersLayer], "summary-settings": [timeLayer], collections: [mailLayer, cticket, sendLayer],
+      "paylink-new-1": [plLangLayer], "paylink-new-2": [plConfirm], "paylink-details": [plQr]
+    }[id] || [];
+  }
+
   function openModal() {
     if (!drawer.hidden) return drawer;
-    var layers = { details: [copyTicket, printLayer], journal: [filtersLayer], "summary-settings": [timeLayer], collections: [mailLayer, cticket, sendLayer], receipt: [ticketEl()], "receipt-old": [ticketEl()] }[current] || [];
+    var layers = screenLayers(current);
     for (var i = 0; i < layers.length; i++) if (!layers[i].hidden) return layers[i];
     return null;
   }
@@ -1564,6 +2060,9 @@
     else if (modal === mailLayer) { var ms = mailDialog.getAttribute("data-mail-state"); if (ms !== "sending") closeMail(ms === "sent"); }
     else if (modal === cticket) closeCticket();
     else if (modal === sendLayer) hideLayer(sendLayer, 0, collUpload);
+    else if (modal === plConfirm) plConfirmOk();   // the link is sent either way: Esc = OK
+    else if (modal === plQr) plCloseQr();
+    else if (modal === plLangLayer) plCloseLang();
     else closeTicket(true);
   });
 
@@ -1573,7 +2072,7 @@
     var swallowClick = false;
     screen.addEventListener("pointerdown", function (e) {
       if (e.pointerType !== "mouse" || e.button !== 0) return;
-      var el = e.target.closest(".hscroll, .journal-list, .ds-panel, .coll-list");
+      var el = e.target.closest(".hscroll, .journal-list, .ds-panel, .coll-list, .pl-details, .pl-langs");
       if (!el) return;
       var r = el.getBoundingClientRect();
       drag = {
@@ -1636,6 +2135,7 @@
     var actionEl = e.target.closest("[data-action]");
     var action = actionEl && actionEl.getAttribute("data-action");
 
+    if (handlePaylinkClick(action, actionEl)) return;
     if (handleHistoryClick(action, actionEl, e)) return;
     if (handleSummaryClick(action, actionEl)) return;
     if (handleCollectionsClick(action, actionEl)) return;
@@ -1674,6 +2174,7 @@
 
   renderAmount();
   renderBadge();
+  applyFlagItems();
   setMethod("card");
   views["details"].setAttribute("data-method", "card");
   go("amount-entry", INSTANT);

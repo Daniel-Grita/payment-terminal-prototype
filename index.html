@@ -38,6 +38,10 @@
           <span>Alipay QR payments</span>
           <input type="checkbox" role="switch" data-flag="alipay-qr">
         </label>
+        <label class="stage-menu__switch">
+          <span>Pay by Link</span>
+          <input type="checkbox" role="switch" data-flag="pay-by-link">
+        </label>
       </fieldset>
       <fieldset class="stage-menu__group">
         <legend class="stage-menu__title">Background</legend>
@@ -473,6 +477,136 @@
             </div>
           </section>
 
+          <!-- ================= Pay by Link ================= -->
+          <!-- Figma "PayXpress Compose" › Pay by Link (section 6481:33361). Stage menu ›
+               Upcoming features › Pay by Link adds it to the side menu. -->
+
+          <!-- L1 · Pay by Link list (Figma 6481:35607) -->
+          <section class="view view--app" data-view="paylinks" aria-label="Pay by Link">
+            <div class="statusbar statusbar--app">
+              <span class="statusbar__time">16:25</span>
+              <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
+            </div>
+            <header class="appbar-app">
+              <button class="appbar-app__btn appbar-app__btn--left" type="button" data-action="open-menu" aria-label="Menu" aria-haspopup="dialog"><img src="assets/icon-burger-48.svg" alt=""></button>
+              <h1 class="appbar-app__title">Pay By Link</h1>
+            </header>
+
+            <div class="app-panel"></div>
+            <button class="bsheet__btn bsheet__btn--primary pl-start" type="button" data-action="pl-new" data-autofocus>start a new payment</button>
+            <label class="cdialog__field pl-search">
+              <img src="assets/icon-search.svg" alt="">
+              <input type="search" placeholder="Search for a transaction by client’s email" aria-label="Search by client’s email" autocomplete="off" spellcheck="false" data-pl-search>
+            </label>
+            <div class="journal-list pl-list" data-pl-list></div>
+
+            <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
+          </section>
+
+          <!-- L2 · New payment link (1/2): payment details (Figma 6481:35474, error state 6481:35490) -->
+          <section class="view view--app" data-view="paylink-new-1" aria-label="New payment link, step 1 of 2">
+            <div class="statusbar statusbar--app">
+              <span class="statusbar__time">16:25</span>
+              <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
+            </div>
+            <header class="appbar-app">
+              <button class="appbar-app__btn appbar-app__btn--left" type="button" data-action="pl-back-list" aria-label="Back" data-autofocus><img src="assets/icon-back.svg" alt=""></button>
+              <h1 class="appbar-app__title">New Payment Link (1/2)</h1>
+            </header>
+
+            <div class="app-panel"></div>
+            <form class="pl-form" data-pl-form="1" novalidate>
+              <div class="pl-form__fields">
+                <h2 class="pl-form__title">Payment details</h2>
+                <div data-pl-fields="payment"></div>
+              </div>
+              <p class="pl-form__note">This link stays active for 15 days after it’s created</p>
+              <button class="bsheet__btn bsheet__btn--primary pl-form__btn" type="submit">next</button>
+            </form>
+
+            <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
+
+            <!-- Communication language: bottom sheet, built like Filters / Print copies.
+                 The list scrolls; app.js fills it from PL_LANGS. -->
+            <div class="sheet-layer sheet-layer--lang" data-layer="pl-lang" hidden>
+              <div class="sheet-layer__backdrop" data-action="pl-lang-close"></div>
+              <div class="bsheet bsheet--lang" role="dialog" aria-modal="true" aria-labelledby="plLangTitle">
+                <span class="bsheet__handle" aria-hidden="true"></span>
+                <div class="bsheet__heading"><h2 id="plLangTitle">Communication language</h2></div>
+                <div class="pl-langs" role="radiogroup" aria-labelledby="plLangTitle" data-pl-langs></div>
+                <button class="bsheet__btn bsheet__btn--lang" type="button" data-action="pl-lang-close">cancel</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- L3 · New payment link (2/2): the client (Figma 6481:35538 empty, 6481:35560 filled) -->
+          <section class="view view--app" data-view="paylink-new-2" aria-label="New payment link, step 2 of 2">
+            <div class="statusbar statusbar--app">
+              <span class="statusbar__time">16:25</span>
+              <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
+            </div>
+            <header class="appbar-app">
+              <button class="appbar-app__btn appbar-app__btn--left" type="button" data-action="pl-back-step" aria-label="Back" data-autofocus><img src="assets/icon-back.svg" alt=""></button>
+              <h1 class="appbar-app__title">New Payment Link (2/2)</h1>
+            </header>
+
+            <div class="app-panel"></div>
+            <form class="pl-form" data-pl-form="2" novalidate>
+              <div class="pl-form__fields">
+                <h2 class="pl-form__title">Client’s main information</h2>
+                <div data-pl-fields="client"></div>
+                <h2 class="pl-form__title pl-form__title--more">Additional information</h2>
+                <p class="pl-form__hint">Adding the client’s address gives the payment a better chance of being accepted.</p>
+                <div data-pl-fields="address"></div>
+              </div>
+              <p class="pl-form__note">This link stays active for 15 days after it’s created</p>
+              <button class="bsheet__btn bsheet__btn--primary pl-form__btn" type="submit">send link</button>
+            </form>
+
+            <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
+
+            <!-- Link sent (Figma 6481:35582): OK slides this screen away to the list -->
+            <div class="cdialog-layer" data-layer="pl-confirm" hidden>
+              <div class="cdialog-layer__dim"></div>
+              <div class="cdialog" role="alertdialog" aria-modal="true" aria-labelledby="plConfirmTitle" aria-describedby="plConfirmText">
+                <h2 class="cdialog__title" id="plConfirmTitle">Confirmation</h2>
+                <p class="cdialog__text" id="plConfirmText">The payment link for order <span data-pl-confirm-order></span> has been sent to the client.</p>
+                <div class="cdialog__actions">
+                  <button class="cdialog__btn" type="button" data-action="pl-confirm-ok">ok</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- L4 · Pay by Link details (Figma 6481:35584) -->
+          <section class="view view--app" data-view="paylink-details" aria-label="Pay by Link details">
+            <div class="statusbar statusbar--app">
+              <span class="statusbar__time">16:25</span>
+              <img class="statusbar__icons" src="assets/status-icons.svg" alt="">
+            </div>
+            <header class="appbar-app">
+              <button class="appbar-app__btn appbar-app__btn--left" type="button" data-action="pl-back-details" aria-label="Back" data-autofocus><img src="assets/icon-back.svg" alt=""></button>
+              <h1 class="appbar-app__title">Pay By Link Details</h1>
+            </header>
+
+            <div class="app-panel"></div>
+            <div class="pl-details" data-pl-details></div>
+
+            <div class="navbar" aria-hidden="true"><img src="assets/android-nav@2x.png" alt=""></div>
+
+            <!-- The payment URL as a QR code (Figma 6481:35605) -->
+            <div class="cdialog-layer" data-layer="pl-qr" hidden>
+              <div class="cdialog-layer__dim" data-action="pl-qr-close"></div>
+              <div class="cdialog" role="dialog" aria-modal="true" aria-labelledby="plQrTitle">
+                <h2 class="cdialog__title" id="plQrTitle">Scan the QR code</h2>
+                <img class="pl-qr" src="assets/paylink-qr.png" alt="QR code for the payment link" width="363" height="368">
+                <div class="cdialog__actions">
+                  <button class="cdialog__btn" type="button" data-action="pl-qr-close">ok</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <!-- H1 · Side menu (Figma B.Menu 5991:10440 / 5991:10458), opened from ☰ -->
           <div class="drawer" id="drawer" hidden>
             <div class="drawer__scrim" data-action="close-menu"></div>
@@ -482,6 +616,8 @@
               <nav aria-label="Main">
               <ul class="menu__list">
                 <li><button class="menu__item" type="button" data-action="menu-go" data-target="amount-entry"><img src="assets/menu-charge.svg" alt=""><span>Charge</span></button></li>
+                <!-- Figma 6481:35452; shown when Upcoming features › Pay by Link is on -->
+                <li data-flag-item="pay-by-link" hidden><button class="menu__item" type="button" data-action="menu-go" data-target="paylinks"><img src="assets/menu-paylink.svg" alt=""><span>Pay by Link</span></button></li>
                 <li><button class="menu__item" type="button" data-action="menu-go" data-target="journal"><img src="assets/menu-history.svg" alt=""><span>Transaction’s history</span></button></li>
                 <li><button class="menu__item" type="button" data-action="menu-go" data-target="summary"><img src="assets/menu-summary.svg" alt=""><span>Daily summary</span></button></li>
                 <li><button class="menu__item" type="button" data-action="menu-go" data-target="collections"><img src="assets/menu-files.svg" alt=""><span>File collection’s history</span></button></li>

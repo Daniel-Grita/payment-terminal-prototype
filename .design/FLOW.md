@@ -77,6 +77,39 @@ Deviations, all so the prototype behaves like the product rather than a click-th
   (320 ms decelerate) as the backdrop fades in, and slide down to close (220 ms ease-in),
   instead of Figma's dissolve.
 
+## Update 2026-11-23 — Pay by Link
+
+Figma file `SgRqzQkSTAUxX8HAyYqgrp`, section `6481:33361` "Pay by Link". Behind stage menu ›
+Upcoming features › Pay by Link, which adds the entry to H1 under Charge (`6481:35452`).
+
+```
+H1 menu ─ Pay by Link ─ same timing as the other entries ─▶ L1 list (6481:35607)
+L1 list ─ START A NEW PAYMENT ─ move in from the right, 300 ease-out ─▶ L2 new (1/2) (6481:35474)
+L2 ─ NEXT, a required field empty ─ instant ─▶ L2 with error (6481:35490)
+   └─ NEXT, all valid ─ instant ─▶ L3 new (2/2) (6481:35538 empty / 6481:35560 filled)
+   └─ ← ─ instant (Back) ─▶ L1
+L3 ─ SEND LINK ─ dissolve 400 ease-out ─▶ "Confirmation" dialog (6481:35582)
+   dialog ─ OK ─ move out to the right, 400 ease-out ─▶ L1, new link on top ("Creation in progress", 30%)
+   └─ ← ─ instant ─▶ L2   (added)
+L1 list ─ row ─ move in from the right, 400 ease-out ─▶ L4 details (6481:35584)
+L4 ─ QR icon (URL row) ─ dissolve 400 ease-out ─▶ "Scan the QR code" (6481:35605) ─ OK (Close) ─▶ L4
+   └─ ← ─ instant (Back) ─▶ L1
+```
+
+Deviations:
+- The fields are real and checked: required fields left empty show "This field is mandatory"
+  (Figma's only error); an invalid email or amount gets its own message. They start filled
+  with Figma's example so the flow clicks straight through; L3 has no empty → filled jump.
+- The search filters by client's email; day headers and Payment attempts collapse.
+- Sample links are dated yesterday (Figma: 17 June 2026) so links awaiting payment are inside
+  their 15 days; times and amounts vary, and every row opens its own details.
+- Communication language opens a bottom sheet (built like Filters / Print copies) with 19
+  languages in their own names; about six and a half rows show and the list scrolls, with a
+  fade on the edge that has more. Figma shows only "Français". The field gets a chevron. Copy fixes: "marchant",
+  "Autorized", "Additionnal", "informations", "attemps", "Clients's", "QRCode", "à" → "at";
+  Figma's placeholder note on step 2 is rewritten; "Firstname"/"Lastname" → "First name"/"Last name".
+- Payment attempts are shown, not wired (Figma doesn't wire them either).
+
 ## States
 
 | # | State | Figma frame | Header shows | Body |
@@ -141,7 +174,7 @@ these keyframes in code:**
 | Screen(s) | Asset | Source | Loop |
 |---|---|---|---|
 | S2, S4, S5, S6 | `assets/loader.webp` (94×94, shown at 170×170) | `Payment Animation.mp4`, frames 0–120 (two 2 s cycles; frame 121 matches frame 0) | seamless, 15 fps |
-| S3 | `assets/present-card.webp` (528×436) | `POS Animation.mp4`, full 2.27 s: card moves in (~1 s), holds, restarts | 25 fps |
+| S3 | `assets/present-card.webp` (463×492) | Tap-to-pay GIF (1200×1200, replaced `POS Animation.mp4` on 2026-11-23), full 1.5 s: contactless waves + card drop onto the terminal, restarts | ~30 fps |
 
 Both are cropped to their content, with near-white video noise (≥242) set to pure white
 so they sit on the #ffffff panel without a visible box. Reduced motion shows a still frame.
