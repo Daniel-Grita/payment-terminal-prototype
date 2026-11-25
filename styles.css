@@ -559,6 +559,9 @@ button.receipt-option:focus-visible { outline: 4px solid var(--c-black); outline
 .ticket__btn--email { left: 20px; }
 .ticket__btn--print { left: 368px; }
 .ticket__btn img { width: 40px; height: 40px; }
+button.ticket__btn { margin: 0; padding: 0; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button.ticket__btn:active { background: var(--c-gray-50); }
+button.ticket__btn:focus-visible { outline: 4px solid var(--c-white); outline-offset: 3px; }   /* as .cticket__btn */
 /* Black, no outline, 20 px corners (on request; Figma has a grey outlined button).
    On the payment receipt it covers the SKIP button under the overlay exactly
    (15–705 × 1497–1585), so SKIP doesn't show around its edges. */
@@ -718,9 +721,12 @@ button.appbar__icon:focus-visible { outline: 4px solid var(--c-black); outline-o
 .summary__line { margin: 0; font-size: 24px; line-height: 29px; color: var(--c-black); }
 .summary__chips { display: flex; gap: 10px; }
 .summary__chips span {
+  flex: none; display: flex; align-items: center; max-width: 280px;
   padding: 5px 10px; border-radius: 4px; background: var(--c-gray-100);
   font-size: 26px; line-height: 31px; text-transform: uppercase; color: var(--c-black);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.summary__chips img { display: block; width: auto; height: 25px; }   /* scheme logo, as in the history rows */
 .icon-btn {
   display: grid; place-items: center;
   width: 110px; height: 72px;
@@ -1281,11 +1287,12 @@ span.cdialog__btn { cursor: default; }
   position: absolute; top: 1305px; width: 332px; height: 88px;
   display: grid; place-items: center;
   margin: 0; padding: 0; border: 1px solid #c2c3c4; border-radius: 20px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
   background: var(--c-white);
 }
 .cticket__btn img { width: 40px; height: 40px; }
-.cticket__btn--email { left: 25px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.cticket__btn--email:active { background: var(--c-gray-50); }
+.cticket__btn--email { left: 25px; }
+.cticket__btn:active { background: var(--c-gray-50); }
 .cticket__btn--print { left: 373px; }
 .cticket__close {
   position: absolute; left: 25px; top: 1413px; width: 680px; height: 88px;

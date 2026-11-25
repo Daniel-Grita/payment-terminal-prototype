@@ -193,6 +193,14 @@
     var amountAttr = details ? "data-detail-amount" : "data-amount-value";
     var label = copy === "merchant" ? "Merchant receipt" : "Customer receipt";
     copy = details ? '<span data-ticket-copy>customer</span>' : copy || "customer";
+    // On a duplicate (transaction details) the buttons under the ticket work: @ emails it, print
+    // only gives press feedback for now. The sale's own ticket keeps them as designed (not wired).
+    var btn = function (kind, icon, attrs) {
+      var img = '<img src="assets/' + icon + '" alt="">';
+      return details
+        ? '  <button class="ticket__btn ticket__btn--' + kind + '" type="button" ' + attrs + ">" + img + "</button>"
+        : '  <div class="ticket__btn ticket__btn--' + kind + '" aria-hidden="true">' + img + "</div>";
+    };
     return (
       '<div class="ticket' + (details ? " ticket--details" : "") + '" role="dialog" aria-modal="true" aria-label="' + label + '" hidden>' +
       '  <div class="statusbar statusbar--muted">' +
@@ -216,8 +224,8 @@
       "    </div>" +
       '    <img class="ticket__edge" src="assets/ticket-edge-bottom.svg" alt="">' +
       "  </div>" +
-      '  <div class="ticket__btn ticket__btn--email" aria-hidden="true"><img src="assets/icon-email.svg" alt=""></div>' +
-      '  <div class="ticket__btn ticket__btn--print" aria-hidden="true"><img src="assets/icon-printer.svg" alt=""></div>' +
+      btn("email", "icon-email.svg", 'data-action="open-mail" aria-label="Send this receipt by email" aria-haspopup="dialog"') +
+      btn("print", "icon-printer.svg", 'aria-label="Print this receipt"') +
       '  <button class="ticket__close" type="button" data-action="close-ticket">close</button>' +
       "</div>"
     );
@@ -508,6 +516,7 @@
   var filtersLayer = views["journal"].querySelector("[data-layer='filters']");
   var filterBadge = views["journal"].querySelector("[data-filter-badge]");
   var filterBtn = views["journal"].querySelector("[data-action='open-filters']");
+  var filterPills = views["journal"].querySelector("[data-filter-pills]");
   var printLayer = views["details"].querySelector("[data-layer='print']");
   var printBtn = views["details"].querySelector("[data-action='open-print']");
   var copyTicket = views["details"].querySelector(".ticket--details");
@@ -561,8 +570,10 @@
     return true;
   }
 
+  var FILTER_GROUPS = ["type", "status", "merchant", "scheme", "collection"];
+
   function activeFilterCount() {
-    return ["type", "status", "merchant", "scheme", "collection"].filter(function (g) { return applied[g]; }).length;
+    return FILTER_GROUPS.filter(function (g) { return applied[g]; }).length;
   }
 
   function renderBadge() {
@@ -570,6 +581,29 @@
     filterBadge.hidden = n === 0;
     filterBadge.textContent = n;
     filterBtn.setAttribute("aria-label", n ? "Filters, " + n + " active" : "Filters");
+  }
+
+  // The pills under the date range repeat the applied filters, worded as in the sheet
+  // (a scheme shows its logo); with nothing applied, a single "all" pill.
+  function renderPills() {
+    filterPills.innerHTML = "";
+    FILTER_GROUPS.forEach(function (g) {
+      if (!applied[g]) return;
+      var chip = filtersLayer.querySelector('.fchip[data-group="' + g + '"][data-value="' + applied[g] + '"]');
+      if (!chip) return;
+      var pill = document.createElement("span");
+      var logo = chip.querySelector("img");
+      if (logo) {
+        var img = logo.cloneNode();
+        img.alt = chip.getAttribute("aria-label");
+        pill.appendChild(img);
+      } else {
+        pill.textContent = chip.textContent.trim();
+      }
+      filterPills.appendChild(pill);
+    });
+    if (!filterPills.children.length) filterPills.innerHTML = "<span>all</span>";
+    filterPills.scrollLeft = 0;
   }
 
   function syncChips() {
@@ -842,6 +876,7 @@
       case "apply-filters":
         applied = Object.assign({}, draft);
         renderBadge();
+        renderPills();
         renderJournal();
         journalList.scrollTop = 0;
         hideLayer(filtersLayer, 300, filterBtn);
@@ -1308,8 +1343,6 @@
   var cticket = collView.querySelector("[data-layer='cticket']");
   var cticketBody = cticket.querySelector("[data-cticket-body]");
   var mailLayer = collView.querySelector("[data-layer='mail']");
-  var mailDialog = mailLayer.querySelector(".cdialog");
-  var mailInput = mailLayer.querySelector("[data-mail-input]");
 
   // Prototype timings (Figma "After delay" on each frame)
   var COLL_T = {
@@ -1354,7 +1387,7 @@
   ] };
   var collSent = false;
   var collTimers = [];
-  var collOpener = null;   // the @ / print button that opened the ticket
+  var collOpener = null;   // the button that opened the report ticket
   var collReport = null;
   var collCollapsed = {};
 
@@ -1380,8 +1413,9 @@
         r.cancels[0] + " cancellations: " + r.cancels[1] + " €<br>" +
         r.refused + " refused (TNA)</p>" +
       '<div class="coll-item__actions">' +
-      '<button class="coll-btn" type="button" data-action="open-cticket" data-report="' + id + '" aria-label="' + r.title + ', email the report"><img src="assets/icon-email.svg" alt=""></button>' +
-      '<button class="coll-btn" type="button" data-action="open-cticket" data-report="' + id + '" aria-label="' + r.title + ', print the report"><img src="assets/icon-printer.svg" alt=""></button>' +
+      '<button class="coll-btn" type="button" data-action="open-mail" aria-label="' + r.title + ', email the report" aria-haspopup="dialog"><img src="assets/icon-email.svg" alt=""></button>' +
+      // Print: press feedback only for now, no print flow yet.
+      '<button class="coll-btn" type="button" aria-label="' + r.title + ', print the report"><img src="assets/icon-printer.svg" alt=""></button>' +
       "</div></article>"
     );
   }
@@ -1517,55 +1551,90 @@
 
   /* ---- Email the report (Frames 56 → 43 → 44 → 45 → 46 → 47) ---- */
 
-  function setMailState(state) {
-    mailDialog.setAttribute("data-mail-state", state);
-    mailLayer.querySelector("[data-mail-title]").textContent = state === "enter" ? "Please enter your email" : "File collection’s reports";
+  // The same dialog also emails a receipt copy from a transaction's details (@ under the ticket).
+  // It is a copy of this one, so the two always look alike.
+  var receiptMailLayer = mailLayer.cloneNode(true);
+  receiptMailLayer.querySelector("[data-mail-title]").id = "receiptMailTitle";
+  receiptMailLayer.querySelector(".cdialog").setAttribute("aria-labelledby", "receiptMailTitle");
+  views["details"].appendChild(receiptMailLayer);
+
+  // Each dialog keeps its own state on its layer (`layer._mail`); every @ that opens one
+  // has data-action="open-mail" and gets the dialog of its own screen.
+  // `title`: the heading while sending; `sent`: where OK on "Ticket has been sent" leads.
+  function mailBox(layer, title, sent) {
+    layer._mail = {
+      layer: layer, dialog: layer.querySelector(".cdialog"), input: layer.querySelector("[data-mail-input]"),
+      titleEl: layer.querySelector("[data-mail-title]"), title: title, sent: sent, openedBy: null
+    };
+    return layer._mail;
+  }
+  var MAILS = [
+    // OK: back to the list (Frame 47 → 11), closing the report ticket if the dialog came from it.
+    mailBox(mailLayer, function () { return "File collection’s reports"; }, closeCticket),
+    // OK: back to the receipt, which can still be printed. Heading: "Customer receipt" / "Merchant receipt".
+    mailBox(receiptMailLayer, function () { return copyTicket.getAttribute("aria-label"); }, null)
+  ];
+  function mailOf(el) { return el.closest("[data-layer='mail']")._mail; }
+
+  function setMailState(m, state) {
+    m.dialog.setAttribute("data-mail-state", state);
+    m.titleEl.textContent = state === "enter" ? "Please enter your email" : m.title();
   }
 
-  function openMail() {
+  function openMail(btn) {
+    var m = btn.closest("[data-view]").querySelector("[data-layer='mail']")._mail;
+    m.openedBy = btn;
     clearMailTimers();
-    setMailState("enter");
-    mailInput.value = "";
-    mailInput._typed = false;
-    showOverDim(mailLayer, "[data-mail-input]");
+    setMailState(m, "enter");
+    m.input.value = "";
+    m.input._typed = false;
+    showOverDim(m.layer, "[data-mail-input]");
     announce("Please enter your email");
   }
 
   // Figma types "example@email.com" in when the field is tapped (Frame 44, 0.8 s).
-  function typeExampleMail() {
-    if (mailInput.value || mailInput._typed) return;
-    mailInput._typed = true;
+  function typeExampleMail(m) {
+    if (m.input.value || m.input._typed) return;
+    m.input._typed = true;
     var text = "example@email.com";
     var step = COLL_T.typing / text.length;
     text.split("").forEach(function (ch, i) {
-      mailLater(function () { if (mailInput.value.length === i) mailInput.value += ch; }, Math.round(step * (i + 1)));
+      mailLater(function () { if (m.input.value.length === i) m.input.value += ch; }, Math.round(step * (i + 1)));
     });
   }
 
-  function validateMail() {
-    if (!mailInput.value.trim()) { mailInput.focus(); typeExampleMail(); return; }
-    setMailState("sending");
+  function validateMail(m) {
+    if (!m.input.value.trim()) { m.input.focus(); typeExampleMail(m); return; }
+    setMailState(m, "sending");
     announce("Electronic ticket sending in progress");
-    if (mailLayer.contains(document.activeElement)) document.activeElement.blur();
+    if (m.layer.contains(document.activeElement)) document.activeElement.blur();
     mailLater(function () {
-      setMailState("sent");
-      mailLayer.querySelector("[data-action='mail-ok']").focus({ preventScroll: true });
+      setMailState(m, "sent");
+      m.layer.querySelector("[data-action='mail-ok']").focus({ preventScroll: true });
     }, COLL_T.mailSend);
   }
 
-  function closeMail(toList) {
+  // `done`: OK on "Ticket has been sent"; otherwise Cancel, the dim or Esc.
+  function closeMail(m, done) {
     clearMailTimers();
-    if (toList) {   // OK on "Ticket has been sent": back to the list (Frame 47 → 11)
-      hideLayer(mailLayer, 0);
-      hideLayer(cticket, 0, collReturn());
-    } else {
-      hideLayer(mailLayer, 0, cticket.querySelector("[data-action='open-mail']"));
-    }
+    hideLayer(m.layer, 0, m.openedBy);
+    if (done && m.sent) m.sent();
   }
 
-  mailLayer.querySelector(".cdialog__field").addEventListener("pointerdown", typeExampleMail);
-  mailInput.addEventListener("keydown", function (e) {
-    if (e.key === "Enter") { e.preventDefault(); validateMail(); }
+  // Esc: closes the dialog unless it is sending. The dim: only while the address is entered.
+  function escMail(m) {
+    var state = m.dialog.getAttribute("data-mail-state");
+    if (state !== "sending") closeMail(m, state === "sent");
+  }
+  function dimMail(m) {
+    if (m.dialog.getAttribute("data-mail-state") === "enter") closeMail(m, false);
+  }
+
+  MAILS.forEach(function (m) {
+    m.layer.querySelector(".cdialog__field").addEventListener("pointerdown", function () { typeExampleMail(m); });
+    m.input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); validateMail(m); }
+    });
   });
 
   function handleCollectionsClick(action, el) {
@@ -1576,11 +1645,11 @@
       case "confirm-send": confirmSend(); return true;
       case "open-cticket": openCticket(el); return true;
       case "close-cticket": closeCticket(); return true;
-      case "open-mail": openMail(); return true;
-      case "dim-mail": if (mailDialog.getAttribute("data-mail-state") === "enter") closeMail(false); return true;
-      case "cancel-mail": closeMail(false); return true;
-      case "validate-mail": validateMail(); return true;
-      case "mail-ok": closeMail(true); return true;
+      case "open-mail": openMail(el); return true;
+      case "dim-mail": dimMail(mailOf(el)); return true;
+      case "cancel-mail": closeMail(mailOf(el), false); return true;
+      case "validate-mail": validateMail(mailOf(el)); return true;
+      case "mail-ok": closeMail(mailOf(el), true); return true;
     }
     return false;
   }
@@ -2025,7 +2094,7 @@
   function screenLayers(id) {
     var ticket = id === "receipt" || id === "receipt-old" ? [views[id].querySelector(".ticket")] : null;
     return ticket || {
-      details: [copyTicket, printLayer], journal: [filtersLayer], "summary-settings": [timeLayer], collections: [mailLayer, cticket, sendLayer],
+      details: [receiptMailLayer, copyTicket, printLayer], journal: [filtersLayer], "summary-settings": [timeLayer], collections: [mailLayer, cticket, sendLayer],
       "paylink-new-1": [plLangLayer], "paylink-new-2": [plConfirm], "paylink-details": [plQr]
     }[id] || [];
   }
@@ -2057,7 +2126,7 @@
     else if (modal === printLayer) hideLayer(printLayer, 150, printBtn);
     else if (modal === filtersLayer) hideLayer(filtersLayer, 300, filterBtn);
     else if (modal === timeLayer) closeTime(false);
-    else if (modal === mailLayer) { var ms = mailDialog.getAttribute("data-mail-state"); if (ms !== "sending") closeMail(ms === "sent"); }
+    else if (modal._mail) escMail(modal._mail);
     else if (modal === cticket) closeCticket();
     else if (modal === sendLayer) hideLayer(sendLayer, 0, collUpload);
     else if (modal === plConfirm) plConfirmOk();   // the link is sent either way: Esc = OK
@@ -2174,6 +2243,7 @@
 
   renderAmount();
   renderBadge();
+  renderPills();
   applyFlagItems();
   setMethod("card");
   views["details"].setAttribute("data-method", "card");
