@@ -160,7 +160,8 @@
 
             <div class="summary">
               <p class="summary__line">16 jan 2025 16:00 → 18 jan 2025 08:00</p>
-              <div class="summary__chips"><span>debit</span><span>cb ctls merch...</span></div>
+              <!-- The applied filters, one pill each, in the sheet's group order; "all" when none -->
+              <div class="summary__chips hscroll" data-filter-pills aria-label="Applied filters"></div>
               <p class="summary__line" lang="fr">TOTAL DES TRANSACTIONS: 1600,50 €</p>
             </div>
             <span class="icon-btn summary__chart" aria-hidden="true"><img src="assets/icon-chart.svg" alt=""></span>
@@ -448,8 +449,8 @@
                 <img class="cticket__edge" src="assets/ticket-edge-bottom.svg" alt="">
               </div>
               <button class="cticket__btn cticket__btn--email" type="button" data-action="open-mail" aria-label="Send this report by email" aria-haspopup="dialog"><img src="assets/icon-email.svg" alt=""></button>
-              <!-- Print: shown as designed; not wired in Figma -->
-              <div class="cticket__btn cticket__btn--print" aria-hidden="true"><img src="assets/icon-printer.svg" alt=""></div>
+              <!-- Print: press feedback only for now, no print flow yet -->
+              <button class="cticket__btn cticket__btn--print" type="button" aria-label="Print this report"><img src="assets/icon-printer.svg" alt=""></button>
               <button class="cticket__close" type="button" data-action="close-cticket">close</button>
             </div>
 
